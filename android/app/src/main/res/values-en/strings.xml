@@ -1,0 +1,25 @@
+<resources>
+    <string name="app_name">Locket Chat</string>
+    <string name="login_title">Locket Login</string>
+    <string name="phone_number_hint">Phone Number (e.g. 0901234567)</string>
+    <string name="password_hint">Password</string>
+    <string name="full_name_hint">Full Name</string>
+    <string name="btn_login">Sign In</string>
+    <string name="btn_register">Create New Account</string>
+    <string name="tab_moments">Moments</string>
+    <string name="tab_chats">Chats</string>
+    <string name="tab_friends">Friends</string>
+    <string name="tab_profile">Profile</string>
+    <string name="search_phone_hint">Search friend by phone...</string>
+    <string name="btn_add_friend">Add Friend</string>
+    <string name="btn_call">Call</string>
+    <string name="btn_send">Send</string>
+    <string name="chat_input_hint">Type a message...</string>
+    <string name="caption_hint">Add a moment caption...</string>
+    <string name="btn_capture">Snap Photo</string>
+    <string name="widget_title">Locket Best Friends Moments</string>
+    <string name="widget_empty_text">No new moments yet</string>
+    <string name="error_empty_fields">Please enter all required fields!</string>
+    <string name="error_invalid_phone">Invalid phone number (must be 10 digits)!</string>
+    <string name="login_success">Login successful!</string>
+</resources>

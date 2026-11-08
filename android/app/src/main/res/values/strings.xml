@@ -1,0 +1,25 @@
+<resources>
+    <string name="app_name">Locket Chat</string>
+    <string name="login_title">Đăng Nhập Locket</string>
+    <string name="phone_number_hint">Số điện thoại (VD: 0901234567)</string>
+    <string name="password_hint">Mật khẩu</string>
+    <string name="full_name_hint">Họ và tên</string>
+    <string name="btn_login">Đăng Nhập</string>
+    <string name="btn_register">Tạo tài khoản mới</string>
+    <string name="tab_moments">Khoảnh Khắc</string>
+    <string name="tab_chats">Trò Chuyện</string>
+    <string name="tab_friends">Bạn Bè</string>
+    <string name="tab_profile">Hồ Sơ</string>
+    <string name="search_phone_hint">Tìm bạn bằng số điện thoại...</string>
+    <string name="btn_add_friend">Kết Bạn</string>
+    <string name="btn_call">Gọi Điện</string>
+    <string name="btn_send">Gửi</string>
+    <string name="chat_input_hint">Nhập tin nhắn...</string>
+    <string name="caption_hint">Thêm ghi chú khoảnh khắc...</string>
+    <string name="btn_capture">Chụp Ảnh</string>
+    <string name="widget_title">Locket Khoảnh Khắc Bạn Thân</string>
+    <string name="widget_empty_text">Chưa có khoảnh khắc mới</string>
+    <string name="error_empty_fields">Vui lòng nhập đầy đủ thông tin!</string>
+    <string name="error_invalid_phone">Số điện thoại không hợp lệ (10 chữ số)!</string>
+    <string name="login_success">Đăng nhập thành công!</string>
+</resources>
