@@ -1,0 +1,41 @@
+# ==========================================
+# AG Kit & Git Rules (Rubric Compliance)
+# ==========================================
+# IMPORTANT: DO NOT ignore .agents folder as required by Antigravity runtime
+
+# Android Build & Cache
+android/.gradle/
+android/build/
+android/*/build/
+android/*.iml
+android/*/*.iml
+android/local.properties
+android/.idea/
+android/app/build/
+android/captures/
+android/.externalNativeBuild/
+android/.cxx/
+
+# Keystore & Signing (STRICT RUBRIC REQUIREMENT)
+*.jks
+*.keystore
+keystore.properties
+*.pepk
+
+# Node.js / Backend
+backend/node_modules/
+backend/dist/
+backend/npm-debug.log*
+backend/yarn-debug.log*
+backend/yarn-error.log*
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Environment Variables
+.env
+.env.local
+.env.production
+
+# OS generated files
+.DS_Store
+Thumbs.db
