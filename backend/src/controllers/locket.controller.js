@@ -72,21 +72,30 @@ exports.getLatestWidgetMoment = async (req, res) => {
 // Lấy danh sách dòng thời gian tất cả khoảnh khắc Locket
 exports.getFeedMoments = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const currentUserId = req.user.id;
+        const filterUserId = req.query.userId;
 
-        const [moments] = await db.query(
-            `SELECT lm.id, lm.image_url, lm.caption, lm.created_at,
-                    u.full_name as sender_name, u.avatar_url as sender_avatar
-             FROM locket_moments lm
-             JOIN users u ON u.id = lm.sender_id
-             WHERE lm.sender_id IN (
-                 SELECT friend_id FROM friendships WHERE user_id = ? AND status = 'ACCEPTED'
-             ) OR lm.sender_id = ?
-             ORDER BY lm.created_at DESC
-             LIMIT 50`,
-            [userId, userId]
-        );
+        let query = `
+            SELECT lm.id, lm.sender_id, lm.image_url, lm.caption, lm.created_at,
+                   u.full_name as sender_name, u.avatar_url as sender_avatar
+            FROM locket_moments lm
+            JOIN users u ON u.id = lm.sender_id
+            WHERE `;
+        const params = [];
 
+        if (filterUserId) {
+            query += `lm.sender_id = ? `;
+            params.push(filterUserId);
+        } else {
+            query += `(lm.sender_id IN (
+                SELECT friend_id FROM friendships WHERE user_id = ? AND status = 'ACCEPTED'
+            ) OR lm.sender_id = ?) `;
+            params.push(currentUserId, currentUserId);
+        }
+
+        query += `ORDER BY lm.created_at DESC LIMIT 50`;
+
+        const [moments] = await db.query(query, params);
         return res.status(200).json({ success: true, data: moments });
     } catch (error) {
         console.error('GetFeedMoments error:', error);
