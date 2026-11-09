@@ -337,10 +337,6 @@ public class MainActivity extends AppCompatActivity {
         btnSendMoment.setOnClickListener(v -> sendMoment());
     }
 
-        // Gửi khoảnh khắc Locket
-        btnSendMoment.setOnClickListener(v -> sendMoment());
-    }
-
     private void startCamera() {
         ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(this);
         cameraProviderFuture.addListener(() -> {
