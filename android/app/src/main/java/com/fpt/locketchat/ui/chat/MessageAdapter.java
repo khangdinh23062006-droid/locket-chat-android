@@ -72,7 +72,8 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     msg, serverHost,
                     sentHolder.tvSent, sentHolder.cardImage, sentHolder.ivImage,
                     sentHolder.layoutFile, sentHolder.tvFileName, sentHolder.tvFileSize,
-                    sentHolder.layoutMomentReply, sentHolder.ivMomentImage, sentHolder.tvMomentComment
+                    sentHolder.layoutMomentReply, sentHolder.ivMomentImage, sentHolder.tvMomentComment,
+                    sentHolder.tvSentMomentBadge
             );
         } else if (holder instanceof ReceivedViewHolder) {
             ReceivedViewHolder recHolder = (ReceivedViewHolder) holder;
@@ -80,7 +81,8 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     msg, serverHost,
                     recHolder.tvReceived, recHolder.cardImage, recHolder.ivImage,
                     recHolder.layoutFile, recHolder.tvFileName, recHolder.tvFileSize,
-                    recHolder.layoutMomentReply, recHolder.ivMomentImage, recHolder.tvMomentComment
+                    recHolder.layoutMomentReply, recHolder.ivMomentImage, recHolder.tvMomentComment,
+                    recHolder.tvReceivedMomentBadge
             );
         }
     }
@@ -88,7 +90,8 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     private void bindMessageData(Message msg, String serverHost,
                                 TextView tvText, CardView cardImage, ImageView ivImage,
                                 View layoutFile, TextView tvFileName, TextView tvFileSize,
-                                View layoutMomentReply, ImageView ivMomentImage, TextView tvMomentComment) {
+                                View layoutMomentReply, ImageView ivMomentImage, TextView tvMomentComment,
+                                TextView tvMomentBadge) {
         String type = msg.getMessageType();
 
         // 1. Tin nhắn dạng Bình luận / Phản hồi Khoảnh khắc Locket (Chuẩn Ảnh 1)
@@ -107,6 +110,26 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     .load(fullUrl)
                     .placeholder(R.drawable.ic_launcher_foreground)
                     .into(ivMomentImage);
+
+            if (tvMomentBadge != null) {
+                String badgeText = "You";
+                String fileMeta = msg.getFileName();
+                if (fileMeta != null && fileMeta.contains("|")) {
+                    String[] parts = fileMeta.split("\\|", 2);
+                    try {
+                        int ownerId = Integer.parseInt(parts[0]);
+                        String ownerName = parts.length > 1 ? parts[1] : "Bạn bè";
+                        badgeText = (ownerId == currentUserId) ? "You" : ownerName;
+                    } catch (Exception e) {
+                        badgeText = parts.length > 1 ? parts[1] : "You";
+                    }
+                } else if (fileMeta != null && !fileMeta.trim().isEmpty()) {
+                    badgeText = fileMeta;
+                } else {
+                    badgeText = (msg.getSenderId() == currentUserId) ? "Bạn bè" : "You";
+                }
+                tvMomentBadge.setText(badgeText);
+            }
 
             String comment = msg.getContent();
             if (comment != null && !comment.trim().isEmpty()) {
@@ -172,6 +195,7 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         View layoutMomentReply;
         ImageView ivMomentImage;
         TextView tvMomentComment;
+        TextView tvSentMomentBadge;
 
         public SentViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -185,6 +209,7 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             layoutMomentReply = itemView.findViewById(R.id.layoutSentMomentReply);
             ivMomentImage = itemView.findViewById(R.id.ivSentMomentImage);
             tvMomentComment = itemView.findViewById(R.id.tvSentMomentComment);
+            tvSentMomentBadge = itemView.findViewById(R.id.tvSentMomentBadge);
         }
     }
 
@@ -198,6 +223,7 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         View layoutMomentReply;
         ImageView ivMomentImage;
         TextView tvMomentComment;
+        TextView tvReceivedMomentBadge;
 
         public ReceivedViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -211,10 +237,7 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             layoutMomentReply = itemView.findViewById(R.id.layoutReceivedMomentReply);
             ivMomentImage = itemView.findViewById(R.id.ivReceivedMomentImage);
             tvMomentComment = itemView.findViewById(R.id.tvReceivedMomentComment);
-            ivImage = itemView.findViewById(R.id.ivReceivedImage);
-            layoutFile = itemView.findViewById(R.id.layoutReceivedFile);
-            tvFileName = itemView.findViewById(R.id.tvReceivedFileName);
-            tvFileSize = itemView.findViewById(R.id.tvReceivedFileSize);
+            tvReceivedMomentBadge = itemView.findViewById(R.id.tvReceivedMomentBadge);
         }
     }
 }

@@ -148,12 +148,12 @@ exports.getMessages = async (req, res) => {
 // Gửi tin nhắn (Text, Image, Video, Audio, File)
 exports.sendMessage = async (req, res) => {
     try {
-        const { conversationId, content, messageType, fileUrl: bodyFileUrl } = req.body;
+        const { conversationId, content, messageType, fileUrl: bodyFileUrl, fileName: bodyFileName } = req.body;
         const userId = req.user.id;
 
         let type = messageType || 'TEXT';
         let fileUrl = bodyFileUrl || null;
-        let fileName = null;
+        let fileName = bodyFileName || null;
         let fileSize = null;
 
         if (req.file) {

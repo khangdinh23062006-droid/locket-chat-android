@@ -471,6 +471,7 @@ public class MainActivity extends AppCompatActivity {
                         msgBody.addProperty("content", messageText);
                         msgBody.addProperty("messageType", "MOMENT");
                         msgBody.addProperty("fileUrl", moment.getImageUrl());
+                        msgBody.addProperty("fileName", moment.getSenderId() + "|" + moment.getSenderName());
 
                         ApiClient.getService().sendMessageJson(msgBody).enqueue(new Callback<JsonObject>() {
                             @Override
