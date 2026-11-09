@@ -293,7 +293,7 @@ public class MainActivity extends AppCompatActivity {
         tvFriendsCount.setText(selectedFilterName + " ⌄");
         if (tvFriendsBadge != null) tvFriendsBadge.setVisibility(View.GONE);
 
-        loadFeedMoments();
+        loadFeedMoments(true);
     }
 
     private void showChatMode() {
@@ -387,7 +387,7 @@ public class MainActivity extends AppCompatActivity {
                                     selectedFilterName = f.has("full_name") ? f.get("full_name").getAsString() : "Bạn bè";
                                 }
                                 tvFriendsCount.setText(selectedFilterName + " ⌄");
-                                loadFeedMoments();
+                                loadFeedMoments(true);
                             })
                             .setNegativeButton("Hủy", null)
                             .show();
@@ -400,6 +400,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadFeedMoments() {
+        loadFeedMoments(false);
+    }
+
+    private void loadFeedMoments(boolean resetToTop) {
+        int currentPos = (vpMomentsFeed != null) ? vpMomentsFeed.getCurrentItem() : 0;
         ApiClient.getService().getFeedMoments(selectedFilterUserId).enqueue(new Callback<JsonObject>() {
             @Override
             public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
@@ -421,7 +426,12 @@ public class MainActivity extends AppCompatActivity {
                         } else {
                             layoutEmptyMoments.setVisibility(View.GONE);
                             if (vpMomentsFeed != null) {
-                                vpMomentsFeed.setCurrentItem(0, false);
+                                if (resetToTop) {
+                                    vpMomentsFeed.setCurrentItem(0, false);
+                                } else {
+                                    int safePos = Math.max(0, Math.min(currentPos, moments.size() - 1));
+                                    vpMomentsFeed.setCurrentItem(safePos, false);
+                                }
                             }
                         }
                     }
