@@ -93,6 +93,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView tvChatBadge;
 
     // CameraX Objects
+    private ProcessCameraProvider cameraProvider;
     private ImageCapture imageCapture;
     private boolean isBackCamera = true;
     private File capturedFile = null;
@@ -218,9 +219,13 @@ public class MainActivity extends AppCompatActivity {
         }
         btnTabChat.clearColorFilter();
         btnTabHistory.clearColorFilter();
+        startCamera();
     }
 
     private void showMomentsMode() {
+        if (cameraProvider != null) {
+            cameraProvider.unbindAll();
+        }
         layoutCameraMode.setVisibility(View.GONE);
         layoutMomentsMode.setVisibility(View.VISIBLE);
         layoutChatMode.setVisibility(View.GONE);
@@ -233,6 +238,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showChatMode() {
+        if (cameraProvider != null) {
+            cameraProvider.unbindAll();
+        }
         layoutCameraMode.setVisibility(View.GONE);
         layoutMomentsMode.setVisibility(View.GONE);
         layoutChatMode.setVisibility(View.VISIBLE);
@@ -341,13 +349,16 @@ public class MainActivity extends AppCompatActivity {
         ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(this);
         cameraProviderFuture.addListener(() -> {
             try {
-                ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
+                cameraProvider = cameraProviderFuture.get();
 
-                Preview preview = new Preview.Builder().build();
+                Preview preview = new Preview.Builder()
+                        .setTargetResolution(new android.util.Size(720, 720))
+                        .build();
                 preview.setSurfaceProvider(cameraPreview.getSurfaceProvider());
 
                 imageCapture = new ImageCapture.Builder()
                         .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+                        .setTargetResolution(new android.util.Size(1080, 1080))
                         .build();
 
                 CameraSelector cameraSelector = isBackCamera
@@ -503,5 +514,16 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         loadConversations();
         loadFriendsCount();
+        if (layoutCameraMode != null && layoutCameraMode.getVisibility() == View.VISIBLE) {
+            startCamera();
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (cameraProvider != null) {
+            cameraProvider.unbindAll();
+        }
     }
 }
