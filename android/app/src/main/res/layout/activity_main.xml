@@ -229,7 +229,59 @@
     </RelativeLayout>
 
     <!-- ================================================================ -->
-    <!-- 3. CONTAINER 2: GIAO DIỆN NHẮN TIN CHAT & TÌM KIẾM BẠN BÈ -->
+    <!-- 3. CONTAINER 2: GIAO DIỆN XEM LẠI KHOẢNH KHẮC (Moments Feed) -->
+    <!-- ================================================================ -->
+    <RelativeLayout
+        android:id="@+id/layoutMomentsMode"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@id/bottomDock"
+        android:layout_below="@id/topBar"
+        android:visibility="gone">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvMomentsFeed"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingBottom="16dp" />
+
+        <LinearLayout
+            android:id="@+id/layoutEmptyMoments"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <ImageView
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:src="@drawable/ic_gallery"
+                app:tint="#666666" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="Chưa có khoảnh khắc nào"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Hãy chụp ảnh hoặc chọn ảnh từ thư viện"
+                android:textColor="#888888"
+                android:textSize="12sp" />
+        </LinearLayout>
+    </RelativeLayout>
+
+    <!-- ================================================================ -->
+    <!-- 4. CONTAINER 3: GIAO DIỆN NHẮN TIN CHAT & TÌM KIẾM BẠN BÈ -->
     <!-- ================================================================ -->
     <LinearLayout
         android:id="@+id/layoutChatMode"

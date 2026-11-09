@@ -20,6 +20,7 @@ import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageCapture;
@@ -33,6 +34,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.fpt.locketchat.R;
 import com.fpt.locketchat.data.api.ApiClient;
 import com.fpt.locketchat.data.model.Conversation;
+import com.fpt.locketchat.data.model.Moment;
 import com.fpt.locketchat.ui.profile.ProfileActivity;
 import com.fpt.locketchat.utils.FileUtils;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -41,6 +43,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.lang.reflect.Type;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -54,7 +58,7 @@ import retrofit2.Response;
 public class MainActivity extends AppCompatActivity {
 
     // Views Container
-    private RelativeLayout layoutCameraMode;
+    private RelativeLayout layoutCameraMode, layoutMomentsMode;
     private LinearLayout layoutChatMode;
 
     // Top Header Views
@@ -71,6 +75,11 @@ public class MainActivity extends AppCompatActivity {
     private ImageView btnShutter;
     private ImageButton btnFlipCamera, btnGalleryPicker;
     private LinearLayout layoutHistoryPill;
+
+    // Moments Feed Views
+    private RecyclerView rvMomentsFeed;
+    private MomentFeedAdapter momentAdapter;
+    private LinearLayout layoutEmptyMoments;
 
     // Chat Views
     private RecyclerView rvConversations;
@@ -98,6 +107,34 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
 
+    // Gallery Picker Launcher (Hỗ trợ máy ảo không có Camera hoặc chọn ảnh từ thư viện)
+    private final ActivityResultLauncher<String> galleryPickerLauncher =
+            registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
+                if (uri != null) {
+                    try {
+                        File tempFile = new File(getCacheDir(), "picked_moment_" + System.currentTimeMillis() + ".jpg");
+                        InputStream inputStream = getContentResolver().openInputStream(uri);
+                        FileOutputStream outputStream = new FileOutputStream(tempFile);
+                        byte[] buffer = new byte[4096];
+                        int bytesRead;
+                        while ((bytesRead = inputStream.read(buffer)) != -1) {
+                            outputStream.write(buffer, 0, bytesRead);
+                        }
+                        outputStream.close();
+                        inputStream.close();
+
+                        capturedFile = tempFile;
+                        ivCapturedPhoto.setImageURI(uri);
+                        ivCapturedPhoto.setVisibility(View.VISIBLE);
+                        cameraPreview.setVisibility(View.GONE);
+                        layoutCaption.setVisibility(View.VISIBLE);
+                        etMomentCaption.setText("");
+                    } catch (Exception e) {
+                        Toast.makeText(this, "Không thể đọc ảnh: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                }
+            });
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -114,6 +151,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void initViews() {
         layoutCameraMode = findViewById(R.id.layoutCameraMode);
+        layoutMomentsMode = findViewById(R.id.layoutMomentsMode);
         layoutChatMode = findViewById(R.id.layoutChatMode);
 
         btnTopProfile = findViewById(R.id.btnTopProfile);
@@ -130,6 +168,13 @@ public class MainActivity extends AppCompatActivity {
         btnFlipCamera = findViewById(R.id.btnFlipCamera);
         btnGalleryPicker = findViewById(R.id.btnGalleryPicker);
         layoutHistoryPill = findViewById(R.id.layoutHistoryPill);
+
+        // Setup Moments Feed RecyclerView
+        rvMomentsFeed = findViewById(R.id.rvMomentsFeed);
+        layoutEmptyMoments = findViewById(R.id.layoutEmptyMoments);
+        momentAdapter = new MomentFeedAdapter(this);
+        rvMomentsFeed.setLayoutManager(new LinearLayoutManager(this));
+        rvMomentsFeed.setAdapter(momentAdapter);
 
         rvConversations = findViewById(R.id.rvConversations);
         etSearchPhone = findViewById(R.id.etSearchPhone);
@@ -149,50 +194,121 @@ public class MainActivity extends AppCompatActivity {
         // Tab Chat (Nhắn tin - mục nhỏ phía dưới)
         btnTabChat.setOnClickListener(v -> showChatMode());
 
-        // Tab Lịch sử / Khoảnh khắc (Trái)
+        // Tab Lịch sử / Khoảnh khắc (Trái) & Viên thuốc Lịch sử
         if (btnTabHistory != null) {
-            btnTabHistory.setOnClickListener(v -> {
-                Toast.makeText(this, "Xem lịch sử khoảnh khắc Locket", Toast.LENGTH_SHORT).show();
-            });
+            btnTabHistory.setOnClickListener(v -> showMomentsMode());
         }
-
-        // Lọc lịch sử dạng viên thuốc
         if (layoutHistoryPill != null) {
-            layoutHistoryPill.setOnClickListener(v -> {
-                Toast.makeText(this, "Bộ lọc khoảnh khắc bạn bè", Toast.LENGTH_SHORT).show();
-            });
+            layoutHistoryPill.setOnClickListener(v -> showMomentsMode());
         }
 
         // Nút Profile (Góc phải trên)
         btnTopProfile.setOnClickListener(v -> openProfile());
 
         // Nút xem bạn bè
-        pillFriendsCount.setOnClickListener(v -> {
-            Toast.makeText(this, "Danh sách bạn bè", Toast.LENGTH_SHORT).show();
-        });
+        pillFriendsCount.setOnClickListener(v -> showFriendsDialog());
     }
 
     private void showCameraMode() {
         layoutCameraMode.setVisibility(View.VISIBLE);
+        layoutMomentsMode.setVisibility(View.GONE);
         layoutChatMode.setVisibility(View.GONE);
         if (btnTabCameraWrapper != null) {
             btnTabCameraWrapper.setBackgroundResource(R.drawable.bg_dock_active_circle);
         }
         btnTabChat.clearColorFilter();
+        btnTabHistory.clearColorFilter();
+    }
+
+    private void showMomentsMode() {
+        layoutCameraMode.setVisibility(View.GONE);
+        layoutMomentsMode.setVisibility(View.VISIBLE);
+        layoutChatMode.setVisibility(View.GONE);
+        btnTabHistory.setColorFilter(getColor(R.color.primary));
+        if (btnTabCameraWrapper != null) {
+            btnTabCameraWrapper.setBackground(null);
+        }
+        btnTabChat.clearColorFilter();
+        loadFeedMoments();
     }
 
     private void showChatMode() {
         layoutCameraMode.setVisibility(View.GONE);
+        layoutMomentsMode.setVisibility(View.GONE);
         layoutChatMode.setVisibility(View.VISIBLE);
         if (btnTabCameraWrapper != null) {
             btnTabCameraWrapper.setBackground(null);
         }
         btnTabChat.setColorFilter(getColor(R.color.primary));
+        btnTabHistory.clearColorFilter();
         loadConversations();
     }
 
     private void openProfile() {
         startActivity(new Intent(MainActivity.this, ProfileActivity.class));
+    }
+
+    private void showFriendsDialog() {
+        ApiClient.getService().getFriends().enqueue(new Callback<JsonObject>() {
+            @Override
+            public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    JsonArray friends = response.body().getAsJsonArray("data");
+                    if (friends == null || friends.size() == 0) {
+                        new AlertDialog.Builder(MainActivity.this)
+                                .setTitle("Danh sách bạn bè")
+                                .setMessage("Bạn chưa có bạn bè nào. Hãy tìm kiếm bạn bằng số điện thoại ở mục Tin nhắn!")
+                                .setPositiveButton("Đóng", null)
+                                .show();
+                        return;
+                    }
+
+                    String[] names = new String[friends.size()];
+                    for (int i = 0; i < friends.size(); i++) {
+                        JsonObject f = friends.get(i).getAsJsonObject();
+                        String name = f.has("full_name") ? f.get("full_name").getAsString() : "Bạn bè";
+                        String phone = f.has("phone") ? f.get("phone").getAsString() : "";
+                        names[i] = "👤 " + name + " (" + phone + ")";
+                    }
+
+                    new AlertDialog.Builder(MainActivity.this)
+                            .setTitle("Bạn bè (" + friends.size() + ")")
+                            .setItems(names, null)
+                            .setPositiveButton("Đóng", null)
+                            .show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<JsonObject> call, Throwable t) {}
+        });
+    }
+
+    private void loadFeedMoments() {
+        ApiClient.getService().getFeedMoments().enqueue(new Callback<JsonObject>() {
+            @Override
+            public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    JsonObject body = response.body();
+                    if (body.get("success").getAsBoolean()) {
+                        JsonArray data = body.getAsJsonArray("data");
+                        Type listType = new TypeToken<List<Moment>>() {}.getType();
+                        List<Moment> moments = new Gson().fromJson(data, listType);
+                        momentAdapter.setData(moments);
+                        if (moments == null || moments.isEmpty()) {
+                            layoutEmptyMoments.setVisibility(View.VISIBLE);
+                        } else {
+                            layoutEmptyMoments.setVisibility(View.GONE);
+                        }
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(Call<JsonObject> call, Throwable t) {
+                layoutEmptyMoments.setVisibility(View.VISIBLE);
+            }
+        });
     }
 
     // ==========================================
@@ -211,8 +327,15 @@ public class MainActivity extends AppCompatActivity {
             startCamera();
         });
 
+        // Chọn ảnh từ Thư viện (Hỗ trợ máy ảo không có Webcam hoặc muốn dùng ảnh có sẵn)
+        btnGalleryPicker.setOnClickListener(v -> galleryPickerLauncher.launch("image/*"));
+
         // Bấm nút chụp Locket to tròn viền vàng
         btnShutter.setOnClickListener(v -> takePhoto());
+
+        // Gửi khoảnh khắc Locket
+        btnSendMoment.setOnClickListener(v -> sendMoment());
+    }
 
         // Gửi khoảnh khắc Locket
         btnSendMoment.setOnClickListener(v -> sendMoment());
@@ -288,9 +411,11 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(MainActivity.this, "Đã gửi khoảnh khắc Locket thành công!", Toast.LENGTH_SHORT).show();
                     // Reset về trạng thái Camera ban đầu
                     ivCapturedPhoto.setVisibility(View.GONE);
+                    cameraPreview.setVisibility(View.VISIBLE);
                     layoutCaption.setVisibility(View.GONE);
                     etMomentCaption.setText("");
                     capturedFile = null;
+                    loadFeedMoments();
                 } else {
                     Toast.makeText(MainActivity.this, "Gửi khoảnh khắc thất bại", Toast.LENGTH_SHORT).show();
                 }
