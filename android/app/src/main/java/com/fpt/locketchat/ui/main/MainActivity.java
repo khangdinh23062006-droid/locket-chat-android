@@ -537,7 +537,7 @@ public class MainActivity extends AppCompatActivity {
             public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
                 if (response.isSuccessful()) {
                     Toast.makeText(MainActivity.this, "Đã thả " + reactionEmoji + " vào khoảnh khắc!", Toast.LENGTH_SHORT).show();
-                    loadMomentsFeed(selectedFilterUserId);
+                    loadFeedMoments();
                 } else {
                     Toast.makeText(MainActivity.this, "Không thể thả biểu cảm, vui lòng thử lại!", Toast.LENGTH_SHORT).show();
                 }
