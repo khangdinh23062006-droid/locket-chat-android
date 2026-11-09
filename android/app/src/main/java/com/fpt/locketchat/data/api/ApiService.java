@@ -33,6 +33,16 @@ public interface ApiService {
     @POST("users/friends")
     Call<JsonObject> addFriend(@Body JsonObject body);
 
+    @PUT("users/profile")
+    Call<JsonObject> updateProfile(@Body JsonObject body);
+
+    @Multipart
+    @PUT("users/profile")
+    Call<JsonObject> updateProfile(
+            @Part MultipartBody.Part avatar,
+            @Part("bio") RequestBody bio
+    );
+
     // Chat
     @GET("chat/conversations")
     Call<JsonObject> getConversations();

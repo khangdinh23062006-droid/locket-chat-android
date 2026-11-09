@@ -79,7 +79,7 @@ public class ProfileActivity extends AppCompatActivity {
             JsonObject body = new JsonObject();
             body.addProperty("bio", newBio);
 
-            ApiClient.getService().updateProfile(null, RequestBody.create(MediaType.parse("text/plain"), newBio)).enqueue(new Callback<JsonObject>() {
+            ApiClient.getService().updateProfile(body).enqueue(new Callback<JsonObject>() {
                 @Override
                 public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
                     Toast.makeText(ProfileActivity.this, "Đã lưu thông tin hồ sơ!", Toast.LENGTH_SHORT).show();
