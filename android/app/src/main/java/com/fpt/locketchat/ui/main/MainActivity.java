@@ -69,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
     // Top Header Views
     private ImageView btnTopProfile;
     private LinearLayout pillFriendsCount;
-    private TextView tvFriendsCount, tvFriendsBadge;
+    private TextView tvFriendsCount;
 
     // Camera Views
     private PreviewView cameraPreview;
@@ -168,7 +168,6 @@ public class MainActivity extends AppCompatActivity {
         btnTopProfile = findViewById(R.id.btnTopProfile);
         pillFriendsCount = findViewById(R.id.pillFriendsCount);
         tvFriendsCount = findViewById(R.id.tvFriendsCount);
-        tvFriendsBadge = findViewById(R.id.tvFriendsBadge);
 
         cameraPreview = findViewById(R.id.cameraPreview);
         ivCapturedPhoto = findViewById(R.id.ivCapturedPhoto);
@@ -272,7 +271,6 @@ public class MainActivity extends AppCompatActivity {
         btnTabChat.clearColorFilter();
         btnTabHistory.clearColorFilter();
         loadFriendsCount();
-        if (tvFriendsBadge != null) tvFriendsBadge.setVisibility(View.VISIBLE);
         startCamera();
     }
 
@@ -291,7 +289,6 @@ public class MainActivity extends AppCompatActivity {
         
         // Hiển thị nhãn lọc "Mọi người ⌄"
         tvFriendsCount.setText(selectedFilterName + " ⌄");
-        if (tvFriendsBadge != null) tvFriendsBadge.setVisibility(View.GONE);
 
         loadFeedMoments(true);
     }
@@ -760,9 +757,6 @@ public class MainActivity extends AppCompatActivity {
                     JsonArray friends = response.body().getAsJsonArray("data");
                     int count = friends != null ? friends.size() : 0;
                     tvFriendsCount.setText("👥 " + count + " người bạn");
-                    if (tvFriendsBadge != null) {
-                        tvFriendsBadge.setText(String.valueOf(count));
-                    }
                 }
             }
 

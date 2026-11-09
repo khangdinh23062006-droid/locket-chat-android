@@ -30,21 +30,9 @@
                 android:id="@+id/tvFriendsCount"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="👥 5 người bạn"
+                android:text="👥 3 người bạn"
                 android:textColor="#FFFFFF"
                 android:textSize="13sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/tvFriendsBadge"
-                android:layout_width="22dp"
-                android:layout_height="22dp"
-                android:layout_marginStart="8dp"
-                android:background="@drawable/bg_badge_yellow"
-                android:gravity="center"
-                android:text="5"
-                android:textColor="#000000"
-                android:textSize="11sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
