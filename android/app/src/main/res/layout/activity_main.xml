@@ -1,86 +1,366 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background"
-    android:orientation="vertical">
+    android:background="@color/background">
 
-    <!-- Top App Bar -->
+    <!-- ================================================================ -->
+    <!-- 1. TOP HEADER (Giao diện mới Locket: Friends Pill ở giữa, Avatar ở phải) -->
+    <!-- ================================================================ -->
     <RelativeLayout
+        android:id="@+id/topBar"
         android:layout_width="match_parent"
         android:layout_height="56dp"
-        android:background="@color/surface"
+        android:layout_alignParentTop="true"
         android:paddingHorizontal="16dp">
 
-        <TextView
-            android:id="@+id/tvAppTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerVertical="true"
-            android:text="@string/app_name"
-            android:textColor="@color/primary"
-            android:textSize="20sp"
-            android:textStyle="bold" />
-
+        <!-- Pill Center: Danh sách bạn bè + Huy hiệu số lượng -->
         <LinearLayout
+            android:id="@+id/pillFriendsCount"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="38dp"
+            android:layout_centerInParent="true"
+            android:background="@drawable/bg_pill_friends"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="14dp">
+
+            <TextView
+                android:id="@+id/tvFriendsCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="👥 5 người bạn"
+                android:textColor="#FFFFFF"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvFriendsBadge"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_badge_yellow"
+                android:gravity="center"
+                android:text="5"
+                android:textColor="#000000"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Avatar / Hồ sơ cá nhân ở góc PHẢI (Chuẩn Giao diện Mới Locket) -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cardTopProfile"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
+            android:backgroundTint="#333333"
+            app:cardCornerRadius="19dp"
+            app:cardElevation="0dp">
+
+            <ImageView
+                android:id="@+id/btnTopProfile"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clickable="true"
+                android:focusable="true"
+                android:scaleType="centerCrop"
+                android:src="@drawable/ic_launcher_foreground" />
+        </androidx.cardview.widget.CardView>
+    </RelativeLayout>
+
+    <!-- ================================================================ -->
+    <!-- 2. CONTAINER 1: GIAO DIỆN CHỤP ẢNH LOCKET (Chính) -->
+    <!-- ================================================================ -->
+    <RelativeLayout
+        android:id="@+id/layoutCameraMode"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@id/bottomDock"
+        android:layout_below="@id/topBar"
+        android:visibility="visible">
+
+        <!-- Khung Viewfinder Camera bo góc lớn 32dp đặc trưng Locket -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cardViewfinder"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_above="@id/shutterControlsLayout"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginTop="6dp"
+            android:layout_marginBottom="8dp"
+            android:backgroundTint="#161616"
+            app:cardCornerRadius="32dp"
+            app:cardElevation="0dp">
+
+            <androidx.camera.view.PreviewView
+                android:id="@+id/cameraPreview"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+            <!-- Chế độ xem ảnh vừa chụp (Preview & Caption) -->
+            <ImageView
+                android:id="@+id/ivCapturedPhoto"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:visibility="gone" />
+
+            <!-- Ô nhập Caption khi chụp ảnh xong -->
+            <LinearLayout
+                android:id="@+id/layoutCaption"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"
+                android:background="#AA000000"
+                android:orientation="horizontal"
+                android:padding="12dp"
+                android:visibility="gone">
+
+                <EditText
+                    android:id="@+id/etMomentCaption"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_weight="1"
+                    android:background="@android:color/transparent"
+                    android:hint="@string/caption_hint"
+                    android:textColor="#FFFFFF"
+                    android:textColorHint="#CCCCCC"
+                    android:textSize="14sp" />
+
+                <Button
+                    android:id="@+id/btnSendMoment"
+                    android:layout_width="wrap_content"
+                    android:layout_height="44dp"
+                    android:backgroundTint="@color/primary"
+                    android:text="Gửi"
+                    android:textColor="#000000"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Bộ nút điều khiển Camera (Thư viện - Nút chụp to viền vàng - Đổi Camera) -->
+        <RelativeLayout
+            android:id="@+id/shutterControlsLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_above="@id/layoutHistoryPill"
+            android:paddingHorizontal="36dp"
+            android:paddingBottom="6dp">
+
+            <!-- Nút chọn ảnh từ thư viện (Trái) -->
+            <ImageButton
+                android:id="@+id/btnGalleryPicker"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_gallery" />
+
+            <!-- NÚT CHỤP TRÒN TO VIỀN VÀNG LOCKET (Chính giữa) -->
+            <ImageView
+                android:id="@+id/btnShutter"
+                android:layout_width="84dp"
+                android:layout_height="84dp"
+                android:layout_centerInParent="true"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:src="@drawable/bg_shutter_ring" />
+
+            <!-- Nút chuyển Camera Trước / Sau (Phải) -->
+            <ImageButton
+                android:id="@+id/btnFlipCamera"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_camera_flip" />
+        </RelativeLayout>
+
+        <!-- Thanh "Lịch sử ⌄" dạng viên thuốc nhỏ bên dưới nút chụp (Chuẩn Locket Mới) -->
+        <LinearLayout
+            android:id="@+id/layoutHistoryPill"
+            android:layout_width="wrap_content"
+            android:layout_height="34dp"
+            android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true"
+            android:layout_marginBottom="8dp"
+            android:background="@drawable/bg_pill_history"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center_vertical"
             android:orientation="horizontal">
 
-            <Button
-                android:id="@+id/btnProfile"
+            <androidx.cardview.widget.CardView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:backgroundTint="#444444"
+                app:cardCornerRadius="10dp"
+                app:cardElevation="0dp">
+
+                <ImageView
+                    android:id="@+id/ivHistoryThumb"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/ic_launcher_foreground" />
+            </androidx.cardview.widget.CardView>
+
+            <TextView
+                android:id="@+id/tvHistoryLabel"
                 android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:backgroundTint="@color/card_bg"
-                android:text="👤 Hồ sơ"
-                android:textColor="@color/primary"
-                android:textSize="12sp" />
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:text="Lịch sử"
+                android:textColor="#FFFFFF"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <ImageView
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:layout_marginStart="4dp"
+                android:src="@drawable/ic_chevron_down" />
         </LinearLayout>
     </RelativeLayout>
 
-    <!-- Search Friend by Phone Section (Rubric 20đ) -->
+    <!-- ================================================================ -->
+    <!-- 3. CONTAINER 2: GIAO DIỆN NHẮN TIN CHAT & TÌM KIẾM BẠN BÈ -->
+    <!-- ================================================================ -->
     <LinearLayout
+        android:id="@+id/layoutChatMode"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/surface"
-        android:orientation="horizontal"
-        android:padding="8dp">
+        android:layout_height="match_parent"
+        android:layout_above="@id/bottomDock"
+        android:layout_below="@id/topBar"
+        android:orientation="vertical"
+        android:visibility="gone">
 
-        <EditText
-            android:id="@+id/etSearchPhone"
-            android:layout_width="0dp"
-            android:layout_height="44dp"
-            android:layout_weight="1"
-            android:background="@color/card_bg"
-            android:hint="@string/search_phone_hint"
-            android:inputType="phone"
-            android:paddingHorizontal="12dp"
-            android:textColor="@color/text_primary"
-            android:textColorHint="@color/text_secondary"
-            android:textSize="14sp" />
+        <!-- Search Bar SĐT -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/surface"
+            android:orientation="horizontal"
+            android:padding="8dp">
 
-        <Button
-            android:id="@+id/btnSearch"
-            android:layout_width="wrap_content"
-            android:layout_height="44dp"
-            android:layout_marginStart="8dp"
-            android:backgroundTint="@color/primary"
-            android:text="Tìm"
-            android:textColor="#000000"
-            android:textSize="13sp"
-            android:textStyle="bold" />
+            <EditText
+                android:id="@+id/etSearchPhone"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:background="@color/card_bg"
+                android:hint="@string/search_phone_hint"
+                android:inputType="phone"
+                android:paddingHorizontal="12dp"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/text_secondary"
+                android:textSize="14sp" />
+
+            <Button
+                android:id="@+id/btnSearch"
+                android:layout_width="wrap_content"
+                android:layout_height="44dp"
+                android:layout_marginStart="8dp"
+                android:backgroundTint="@color/primary"
+                android:text="Tìm"
+                android:textColor="#000000"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Danh sách cuộc trò chuyện -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvConversations"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:padding="8dp" />
     </LinearLayout>
 
-    <!-- RecyclerView for Conversations / Friends -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvConversations"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:clipToPadding="false"
-        android:padding="8dp" />
+    <!-- ================================================================ -->
+    <!-- 4. BOTTOM FLOATING DOCK (Thanh điều hướng bo tròn chuẩn Locket Mới) -->
+    <!-- ================================================================ -->
+    <LinearLayout
+        android:id="@+id/bottomDock"
+        android:layout_width="210dp"
+        android:layout_height="54dp"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="12dp"
+        android:background="@drawable/bg_bottom_dock"
+        android:elevation="6dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:paddingHorizontal="10dp">
 
-</LinearLayout>
+        <!-- 1. Tab Lịch sử / Khoảnh khắc (Trái) -->
+        <ImageButton
+            android:id="@+id/btnTabHistory"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Lịch sử"
+            android:src="@drawable/ic_grid_feed" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <!-- 2. Tab Camera / Home (Giữa - Nút đang chọn có vòng tròn nổi) -->
+        <FrameLayout
+            android:id="@+id/btnTabCameraWrapper"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:background="@drawable/bg_dock_active_circle">
+
+            <ImageButton
+                android:id="@+id/btnTabCamera"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@android:color/transparent"
+                android:contentDescription="Camera"
+                android:src="@drawable/ic_home" />
+        </FrameLayout>
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <!-- 3. Tab Chat / Tin nhắn có Huy hiệu thông báo vàng (Phải) -->
+        <RelativeLayout
+            android:id="@+id/btnTabChatWrapper"
+            android:layout_width="44dp"
+            android:layout_height="44dp">
+
+            <ImageButton
+                android:id="@+id/btnTabChat"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_centerInParent="true"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Tin nhắn"
+                android:src="@drawable/ic_chat" />
+
+            <TextView
+                android:id="@+id/tvChatBadge"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_alignParentTop="true"
+                android:layout_alignParentEnd="true"
+                android:background="@drawable/bg_badge_yellow"
+                android:gravity="center"
+                android:text="1"
+                android:textColor="#000000"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+        </RelativeLayout>
+    </LinearLayout>
+
+</RelativeLayout>
