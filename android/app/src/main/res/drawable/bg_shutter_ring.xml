@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Outer Golden Ring -->
+    <item>
+        <shape android:shape="oval">
+            <size android:width="84dp" android:height="84dp" />
+            <stroke android:width="5dp" android:color="#FFB800" />
+            <solid android:color="#00000000" />
+        </shape>
+    </item>
+    <!-- Inner White Shutter -->
+    <item android:top="8dp" android:bottom="8dp" android:left="8dp" android:right="8dp">
+        <shape android:shape="oval">
+            <solid android:color="#FFFFFF" />
+        </shape>
+    </item>
+</layer-list>
