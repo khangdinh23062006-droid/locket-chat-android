@@ -71,34 +71,64 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             bindMessageData(
                     msg, serverHost,
                     sentHolder.tvSent, sentHolder.cardImage, sentHolder.ivImage,
-                    sentHolder.layoutFile, sentHolder.tvFileName, sentHolder.tvFileSize
+                    sentHolder.layoutFile, sentHolder.tvFileName, sentHolder.tvFileSize,
+                    sentHolder.layoutMomentReply, sentHolder.ivMomentImage, sentHolder.tvMomentComment
             );
         } else if (holder instanceof ReceivedViewHolder) {
             ReceivedViewHolder recHolder = (ReceivedViewHolder) holder;
             bindMessageData(
                     msg, serverHost,
                     recHolder.tvReceived, recHolder.cardImage, recHolder.ivImage,
-                    recHolder.layoutFile, recHolder.tvFileName, recHolder.tvFileSize
+                    recHolder.layoutFile, recHolder.tvFileName, recHolder.tvFileSize,
+                    recHolder.layoutMomentReply, recHolder.ivMomentImage, recHolder.tvMomentComment
             );
         }
     }
 
     private void bindMessageData(Message msg, String serverHost,
                                 TextView tvText, CardView cardImage, ImageView ivImage,
-                                View layoutFile, TextView tvFileName, TextView tvFileSize) {
+                                View layoutFile, TextView tvFileName, TextView tvFileSize,
+                                View layoutMomentReply, ImageView ivMomentImage, TextView tvMomentComment) {
         String type = msg.getMessageType();
 
-        // 1. Tin nhắn Text
-        if ("TEXT".equalsIgnoreCase(type) || msg.getFileUrl() == null) {
+        // 1. Tin nhắn dạng Bình luận / Phản hồi Khoảnh khắc Locket (Chuẩn Ảnh 1)
+        if ("MOMENT".equalsIgnoreCase(type)) {
+            tvText.setVisibility(View.GONE);
+            cardImage.setVisibility(View.GONE);
+            layoutFile.setVisibility(View.GONE);
+            layoutMomentReply.setVisibility(View.VISIBLE);
+
+            String fullUrl = msg.getFileUrl();
+            if (fullUrl != null && !fullUrl.startsWith("http")) {
+                fullUrl = serverHost + fullUrl;
+            }
+
+            Glide.with(context)
+                    .load(fullUrl)
+                    .placeholder(R.drawable.ic_launcher_foreground)
+                    .into(ivMomentImage);
+
+            String comment = msg.getContent();
+            if (comment != null && !comment.trim().isEmpty()) {
+                tvMomentComment.setVisibility(View.VISIBLE);
+                tvMomentComment.setText(comment);
+            } else {
+                tvMomentComment.setVisibility(View.GONE);
+            }
+        }
+        // 2. Tin nhắn Text thông thường
+        else if ("TEXT".equalsIgnoreCase(type) || msg.getFileUrl() == null) {
             tvText.setVisibility(View.VISIBLE);
             tvText.setText(msg.getContent());
             cardImage.setVisibility(View.GONE);
             layoutFile.setVisibility(View.GONE);
+            layoutMomentReply.setVisibility(View.GONE);
         }
-        // 2. Tin nhắn Hình ảnh
+        // 3. Tin nhắn Hình ảnh
         else if ("IMAGE".equalsIgnoreCase(type)) {
             tvText.setVisibility(View.GONE);
             layoutFile.setVisibility(View.GONE);
+            layoutMomentReply.setVisibility(View.GONE);
             cardImage.setVisibility(View.VISIBLE);
 
             String fullUrl = serverHost + msg.getFileUrl();
@@ -107,10 +137,11 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     .placeholder(R.drawable.ic_launcher_foreground)
                     .into(ivImage);
         }
-        // 3. Tin nhắn File tài liệu
+        // 4. Tin nhắn File tài liệu
         else {
             tvText.setVisibility(View.GONE);
             cardImage.setVisibility(View.GONE);
+            layoutMomentReply.setVisibility(View.GONE);
             layoutFile.setVisibility(View.VISIBLE);
 
             tvFileName.setText(msg.getFileName() != null ? msg.getFileName() : "File đính kèm");
@@ -137,6 +168,11 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         ImageView ivImage;
         View layoutFile;
 
+        // Moment Reply Views
+        View layoutMomentReply;
+        ImageView ivMomentImage;
+        TextView tvMomentComment;
+
         public SentViewHolder(@NonNull View itemView) {
             super(itemView);
             tvSent = itemView.findViewById(R.id.tvSentMessage);
@@ -145,6 +181,10 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             layoutFile = itemView.findViewById(R.id.layoutSentFile);
             tvFileName = itemView.findViewById(R.id.tvSentFileName);
             tvFileSize = itemView.findViewById(R.id.tvSentFileSize);
+
+            layoutMomentReply = itemView.findViewById(R.id.layoutSentMomentReply);
+            ivMomentImage = itemView.findViewById(R.id.ivSentMomentImage);
+            tvMomentComment = itemView.findViewById(R.id.tvSentMomentComment);
         }
     }
 
@@ -154,10 +194,23 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         ImageView ivImage;
         View layoutFile;
 
+        // Moment Reply Views
+        View layoutMomentReply;
+        ImageView ivMomentImage;
+        TextView tvMomentComment;
+
         public ReceivedViewHolder(@NonNull View itemView) {
             super(itemView);
             tvReceived = itemView.findViewById(R.id.tvReceivedMessage);
             cardImage = itemView.findViewById(R.id.cardReceivedImage);
+            ivImage = itemView.findViewById(R.id.ivReceivedImage);
+            layoutFile = itemView.findViewById(R.id.layoutReceivedFile);
+            tvFileName = itemView.findViewById(R.id.tvReceivedFileName);
+            tvFileSize = itemView.findViewById(R.id.tvReceivedFileSize);
+
+            layoutMomentReply = itemView.findViewById(R.id.layoutReceivedMomentReply);
+            ivMomentImage = itemView.findViewById(R.id.ivReceivedMomentImage);
+            tvMomentComment = itemView.findViewById(R.id.tvReceivedMomentComment);
             ivImage = itemView.findViewById(R.id.ivReceivedImage);
             layoutFile = itemView.findViewById(R.id.layoutReceivedFile);
             tvFileName = itemView.findViewById(R.id.tvReceivedFileName);

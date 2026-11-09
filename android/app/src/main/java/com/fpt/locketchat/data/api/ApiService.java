@@ -65,6 +65,9 @@ public interface ApiService {
             @Part MultipartBody.Part file
     );
 
+    @POST("chat/messages")
+    Call<JsonObject> sendMessageJson(@Body JsonObject body);
+
     // Locket Moments & Widget
     @Multipart
     @POST("locket/moment")

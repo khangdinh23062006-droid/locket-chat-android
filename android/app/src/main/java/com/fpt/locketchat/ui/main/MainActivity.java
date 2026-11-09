@@ -32,6 +32,7 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
+import com.bumptech.glide.Glide;
 import com.fpt.locketchat.R;
 import com.fpt.locketchat.data.api.ApiClient;
 import com.fpt.locketchat.data.model.Conversation;
@@ -76,6 +77,7 @@ public class MainActivity extends AppCompatActivity {
     private ImageView btnShutter;
     private ImageButton btnFlipCamera, btnGalleryPicker;
     private LinearLayout layoutHistoryPill;
+    private ImageView ivHistoryThumb;
 
     // Moments Feed Views
     private ViewPager2 vpMomentsFeed;
@@ -148,6 +150,8 @@ public class MainActivity extends AppCompatActivity {
         setupRecyclerView();
         loadConversations();
         loadFriendsCount();
+        loadLatestHistoryThumbnail();
+        loadLatestHistoryThumbnail();
         setupNavigationTabs();
         setupCamera();
         setupChatActions();
@@ -172,6 +176,7 @@ public class MainActivity extends AppCompatActivity {
         btnFlipCamera = findViewById(R.id.btnFlipCamera);
         btnGalleryPicker = findViewById(R.id.btnGalleryPicker);
         layoutHistoryPill = findViewById(R.id.layoutHistoryPill);
+        ivHistoryThumb = findViewById(R.id.ivHistoryThumb);
 
         // Setup Moments Feed ViewPager2 (Vuốt dọc từng khoảnh khắc chuẩn Locket)
         vpMomentsFeed = findViewById(R.id.vpMomentsFeed);
@@ -380,6 +385,12 @@ public class MainActivity extends AppCompatActivity {
                         Type listType = new TypeToken<List<Moment>>() {}.getType();
                         List<Moment> moments = new Gson().fromJson(data, listType);
                         momentAdapter.setData(moments);
+
+                        // Cập nhật ảnh đại diện khoảnh khắc mới nhất vào nút Lịch sử (Chuẩn Ảnh 2)
+                        if (moments != null && !moments.isEmpty()) {
+                            updateHistoryThumbnail(moments.get(0).getImageUrl());
+                        }
+
                         if (moments == null || moments.isEmpty()) {
                             layoutEmptyMoments.setVisibility(View.VISIBLE);
                         } else {
@@ -399,7 +410,41 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    // Gửi bình luận hoặc cảm xúc React vào phòng chat của người đăng khoảnh khắc
+    // Cập nhật ảnh khoảnh khắc mới nhất thu nhỏ vào nút Lịch sử (Chuẩn Ảnh 2)
+    private void updateHistoryThumbnail(String imageUrl) {
+        if (ivHistoryThumb == null || imageUrl == null || imageUrl.trim().isEmpty()) return;
+        String fullUrl = imageUrl;
+        if (!fullUrl.startsWith("http")) {
+            fullUrl = ApiClient.BASE_URL.replace("/api/", "") + fullUrl;
+        }
+        Glide.with(MainActivity.this)
+                .load(fullUrl)
+                .placeholder(R.drawable.ic_launcher_foreground)
+                .error(R.drawable.ic_launcher_foreground)
+                .into(ivHistoryThumb);
+    }
+
+    private void loadLatestHistoryThumbnail() {
+        ApiClient.getService().getLatestWidgetMoment().enqueue(new Callback<JsonObject>() {
+            @Override
+            public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    JsonObject body = response.body();
+                    if (body.has("data") && !body.get("data").isJsonNull()) {
+                        JsonObject data = body.getAsJsonObject("data");
+                        if (data.has("image_url")) {
+                            updateHistoryThumbnail(data.get("image_url").getAsString());
+                        }
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(Call<JsonObject> call, Throwable t) {}
+        });
+    }
+
+    // Gửi bình luận hoặc cảm xúc React vào phòng chat của người đăng khoảnh khắc (Chuẩn Ảnh 1)
     private void sendMomentMessage(Moment moment, String messageText) {
         int targetUserId = moment.getSenderId();
         int myUserId = getSharedPreferences("locket_prefs", MODE_PRIVATE).getInt("user_id", -1);
@@ -420,14 +465,17 @@ public class MainActivity extends AppCompatActivity {
                     if (resBody.get("success").getAsBoolean()) {
                         int convId = resBody.getAsJsonObject("data").get("conversationId").getAsInt();
 
-                        RequestBody reqConvId = RequestBody.create(MediaType.parse("text/plain"), String.valueOf(convId));
-                        RequestBody reqContent = RequestBody.create(MediaType.parse("text/plain"), messageText);
-                        RequestBody reqType = RequestBody.create(MediaType.parse("text/plain"), "TEXT");
+                        // Gửi tin nhắn dạng MOMENT đính kèm ảnh khoảnh khắc và lời bình luận
+                        JsonObject msgBody = new JsonObject();
+                        msgBody.addProperty("conversationId", convId);
+                        msgBody.addProperty("content", messageText);
+                        msgBody.addProperty("messageType", "MOMENT");
+                        msgBody.addProperty("fileUrl", moment.getImageUrl());
 
-                        ApiClient.getService().sendMessage(reqConvId, reqContent, reqType, null).enqueue(new Callback<JsonObject>() {
+                        ApiClient.getService().sendMessageJson(msgBody).enqueue(new Callback<JsonObject>() {
                             @Override
                             public void onResponse(Call<JsonObject> c, Response<JsonObject> r) {
-                                Toast.makeText(MainActivity.this, "Đã gửi tin nhắn đến " + moment.getSenderName() + ": " + messageText, Toast.LENGTH_SHORT).show();
+                                Toast.makeText(MainActivity.this, "Đã gửi vào chat của " + moment.getSenderName() + ": " + messageText, Toast.LENGTH_SHORT).show();
                             }
 
                             @Override
@@ -639,6 +687,7 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         loadConversations();
         loadFriendsCount();
+        loadLatestHistoryThumbnail();
         if (layoutCameraMode != null && layoutCameraMode.getVisibility() == View.VISIBLE) {
             startCamera();
         }

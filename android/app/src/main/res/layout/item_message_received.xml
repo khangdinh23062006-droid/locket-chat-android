@@ -36,6 +36,69 @@
             android:scaleType="centerCrop" />
     </androidx.cardview.widget.CardView>
 
+    <!-- Khung hiển thị bình luận Khoảnh khắc Locket (Chuẩn Ảnh 1) -->
+    <LinearLayout
+        android:id="@+id/layoutReceivedMomentReply"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="start"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="260dp"
+            android:layout_height="260dp"
+            android:backgroundTint="#1A1A1A"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="2dp">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <ImageView
+                    android:id="@+id/ivReceivedMomentImage"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop" />
+
+                <!-- Badge người sở hữu khoảnh khắc ở góc trên ảnh -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="26dp"
+                    android:layout_alignParentStart="true"
+                    android:layout_alignParentTop="true"
+                    android:layout_margin="10dp"
+                    android:background="@drawable/bg_pill_friends"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="8dp">
+
+                    <TextView
+                        android:id="@+id/tvReceivedMomentBadge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Khoảnh khắc"
+                        android:textColor="#FFFFFF"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </RelativeLayout>
+        </androidx.cardview.widget.CardView>
+
+        <TextView
+            android:id="@+id/tvReceivedMomentComment"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:maxWidth="260dp"
+            android:background="@color/bubble_received"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="8dp"
+            android:textColor="@color/bubble_received_text"
+            android:textSize="14sp" />
+    </LinearLayout>
+
     <!-- Bong bóng tin nhắn File tài liệu -->
     <LinearLayout
         android:id="@+id/layoutReceivedFile"
