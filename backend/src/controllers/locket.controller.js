@@ -96,9 +96,59 @@ exports.getFeedMoments = async (req, res) => {
         query += `ORDER BY lm.created_at DESC LIMIT 50`;
 
         const [moments] = await db.query(query, params);
+
+        if (moments.length > 0) {
+            const momentIds = moments.map(m => m.id);
+            const [reactions] = await db.query(
+                `SELECT mr.moment_id, mr.user_id, mr.emoji, mr.created_at,
+                        u.full_name as user_name, u.avatar_url
+                 FROM moment_reactions mr
+                 JOIN users u ON u.id = mr.user_id
+                 WHERE mr.moment_id IN (?)
+                 ORDER BY mr.created_at ASC`,
+                [momentIds]
+            );
+
+            const reactionMap = {};
+            reactions.forEach(r => {
+                if (!reactionMap[r.moment_id]) {
+                    reactionMap[r.moment_id] = [];
+                }
+                reactionMap[r.moment_id].push(r);
+            });
+
+            moments.forEach(m => {
+                m.reactions = reactionMap[m.id] || [];
+            });
+        }
+
         return res.status(200).json({ success: true, data: moments });
     } catch (error) {
         console.error('GetFeedMoments error:', error);
+        return res.status(500).json({ success: false, message: 'Internal server error.' });
+    }
+};
+
+// Thả biểu cảm cảm xúc (React) vào khoảnh khắc Locket
+exports.reactMoment = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { momentId, emoji } = req.body;
+
+        if (!momentId || !emoji) {
+            return res.status(400).json({ success: false, message: 'momentId and emoji are required.' });
+        }
+
+        await db.query(
+            `INSERT INTO moment_reactions (moment_id, user_id, emoji)
+             VALUES (?, ?, ?)
+             ON DUPLICATE KEY UPDATE emoji = VALUES(emoji), created_at = CURRENT_TIMESTAMP`,
+            [momentId, userId, emoji]
+        );
+
+        return res.status(200).json({ success: true, message: 'Reaction recorded successfully.' });
+    } catch (error) {
+        console.error('ReactMoment error:', error);
         return res.status(500).json({ success: false, message: 'Internal server error.' });
     }
 };

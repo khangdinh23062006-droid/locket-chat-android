@@ -91,13 +91,16 @@
             android:layout_marginTop="6dp"
             android:layout_marginBottom="8dp"
             android:backgroundTint="#161616"
+            android:clipToOutline="true"
             app:cardCornerRadius="32dp"
-            app:cardElevation="0dp">
+            app:cardElevation="0dp"
+            app:cardPreventCornerOverlap="false">
 
             <androidx.camera.view.PreviewView
                 android:id="@+id/cameraPreview"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:clipToOutline="true"
                 app:implementationMode="compatible" />
 
             <!-- Chế độ xem ảnh vừa chụp (Preview & Caption) -->

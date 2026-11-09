@@ -84,4 +84,7 @@ public interface ApiService {
 
     @GET("locket/feed")
     Call<JsonObject> getFeedMoments(@Query("userId") Integer userId);
+
+    @POST("locket/react")
+    Call<JsonObject> reactMoment(@Body JsonObject body);
 }

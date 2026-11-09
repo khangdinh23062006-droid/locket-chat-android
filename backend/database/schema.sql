@@ -79,6 +79,18 @@ CREATE TABLE IF NOT EXISTS locket_moments (
     CONSTRAINT fk_moment_sender FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+-- 7. Bảng biểu cảm cảm xúc khoảnh khắc (Moment Reactions / Hoạt động)
+CREATE TABLE IF NOT EXISTS moment_reactions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    moment_id INT NOT NULL,
+    user_id INT NOT NULL,
+    emoji VARCHAR(20) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_moment_user (moment_id, user_id),
+    CONSTRAINT fk_mr_moment FOREIGN KEY (moment_id) REFERENCES locket_moments(id) ON DELETE CASCADE,
+    CONSTRAINT fk_mr_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
 -- ===================================================
 -- SEED DATA (Dữ liệu mẫu để kiểm thử đồ án)
 -- Mật khẩu mẫu: 123456 (Bcrypt hash: $2a$10$wE8wU/uFk1E5c5m7nBf.e.Hh5gQJbY0kUqJp8V1qVbJjWjL/uR0K2)

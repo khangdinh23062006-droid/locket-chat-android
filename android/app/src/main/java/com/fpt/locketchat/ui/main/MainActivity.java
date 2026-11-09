@@ -5,9 +5,11 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Outline;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewOutlineProvider;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
@@ -28,6 +30,7 @@ import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
+import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -178,10 +181,26 @@ public class MainActivity extends AppCompatActivity {
         layoutHistoryPill = findViewById(R.id.layoutHistoryPill);
         ivHistoryThumb = findViewById(R.id.ivHistoryThumb);
 
+        // Bo tròn 4 góc 32dp cho khung máy ảnh PreviewView chuẩn Locket
+        CardView cardViewfinder = findViewById(R.id.cardViewfinder);
+        if (cardViewfinder != null) {
+            cardViewfinder.setOutlineProvider(new ViewOutlineProvider() {
+                @Override
+                public void getOutline(View view, Outline outline) {
+                    outline.setRoundRect(0, 0, view.getWidth(), view.getHeight(), 32 * getResources().getDisplayMetrics().density);
+                }
+            });
+            cardViewfinder.setClipToOutline(true);
+        }
+        if (cameraPreview != null) {
+            cameraPreview.setClipToOutline(true);
+        }
+
         // Setup Moments Feed ViewPager2 (Vuốt dọc từng khoảnh khắc chuẩn Locket)
         vpMomentsFeed = findViewById(R.id.vpMomentsFeed);
         layoutEmptyMoments = findViewById(R.id.layoutEmptyMoments);
-        momentAdapter = new MomentFeedAdapter(this);
+        int myUserId = getSharedPreferences("locket_prefs", MODE_PRIVATE).getInt("user_id", -1);
+        momentAdapter = new MomentFeedAdapter(this, myUserId);
         vpMomentsFeed.setOrientation(ViewPager2.ORIENTATION_VERTICAL);
         vpMomentsFeed.setAdapter(momentAdapter);
 
@@ -194,7 +213,13 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onSendReaction(Moment moment, String reactionEmoji) {
-                sendMomentMessage(moment, reactionEmoji);
+                // Thả icon react: lưu vào hoạt động, KHÔNG gửi vào tin nhắn
+                sendMomentReaction(moment, reactionEmoji);
+            }
+
+            @Override
+            public void onOpenActivity(Moment moment) {
+                showMomentActivityDialog(moment);
             }
         });
 
@@ -491,6 +516,59 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(MainActivity.this, "Lỗi kết nối", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    // Thả biểu cảm cảm xúc (React) vào khoảnh khắc Locket (Lưu vào hoạt động, KHÔNG gửi vào tin nhắn)
+    private void sendMomentReaction(Moment moment, String reactionEmoji) {
+        int targetUserId = moment.getSenderId();
+        int myUserId = getSharedPreferences("locket_prefs", MODE_PRIVATE).getInt("user_id", -1);
+
+        if (targetUserId == myUserId || targetUserId <= 0) {
+            Toast.makeText(this, "Bạn không thể tự thả biểu cảm cho khoảnh khắc của mình!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        JsonObject body = new JsonObject();
+        body.addProperty("momentId", moment.getId());
+        body.addProperty("emoji", reactionEmoji);
+
+        ApiClient.getService().reactMoment(body).enqueue(new Callback<JsonObject>() {
+            @Override
+            public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
+                if (response.isSuccessful()) {
+                    Toast.makeText(MainActivity.this, "Đã thả " + reactionEmoji + " vào khoảnh khắc!", Toast.LENGTH_SHORT).show();
+                    loadMomentsFeed(selectedFilterUserId);
+                } else {
+                    Toast.makeText(MainActivity.this, "Không thể thả biểu cảm, vui lòng thử lại!", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<JsonObject> call, Throwable t) {
+                Toast.makeText(MainActivity.this, "Lỗi kết nối khi thả biểu cảm!", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    // Hiển thị danh sách hoạt động tương tác / thả biểu cảm cho khoảnh khắc này
+    private void showMomentActivityDialog(Moment moment) {
+        List<Moment.Reaction> reactions = moment.getReactions();
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("✨ Hoạt động khoảnh khắc");
+
+        if (reactions == null || reactions.isEmpty()) {
+            builder.setMessage("Chưa có bạn bè nào thả biểu cảm cho khoảnh khắc này.");
+        } else {
+            StringBuilder sb = new StringBuilder();
+            for (Moment.Reaction r : reactions) {
+                String name = (r.getUserName() != null && !r.getUserName().isEmpty()) ? r.getUserName() : "Bạn bè";
+                sb.append("• ").append(name).append(" đã thả ").append(r.getEmoji()).append("\n");
+            }
+            builder.setMessage(sb.toString().trim());
+        }
+
+        builder.setPositiveButton("Đóng", (dialog, which) -> dialog.dismiss());
+        builder.create().show();
     }
 
     // ==========================================
