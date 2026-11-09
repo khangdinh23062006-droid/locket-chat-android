@@ -31,6 +31,7 @@ import androidx.camera.view.PreviewView;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.viewpager2.widget.ViewPager2;
 import com.fpt.locketchat.R;
 import com.fpt.locketchat.data.api.ApiClient;
 import com.fpt.locketchat.data.model.Conversation;
@@ -77,9 +78,11 @@ public class MainActivity extends AppCompatActivity {
     private LinearLayout layoutHistoryPill;
 
     // Moments Feed Views
-    private RecyclerView rvMomentsFeed;
+    private ViewPager2 vpMomentsFeed;
     private MomentFeedAdapter momentAdapter;
     private LinearLayout layoutEmptyMoments;
+    private Integer selectedFilterUserId = null;
+    private String selectedFilterName = "Mọi người";
 
     // Chat Views
     private RecyclerView rvConversations;
@@ -170,12 +173,25 @@ public class MainActivity extends AppCompatActivity {
         btnGalleryPicker = findViewById(R.id.btnGalleryPicker);
         layoutHistoryPill = findViewById(R.id.layoutHistoryPill);
 
-        // Setup Moments Feed RecyclerView
-        rvMomentsFeed = findViewById(R.id.rvMomentsFeed);
+        // Setup Moments Feed ViewPager2 (Vuốt dọc từng khoảnh khắc chuẩn Locket)
+        vpMomentsFeed = findViewById(R.id.vpMomentsFeed);
         layoutEmptyMoments = findViewById(R.id.layoutEmptyMoments);
         momentAdapter = new MomentFeedAdapter(this);
-        rvMomentsFeed.setLayoutManager(new LinearLayoutManager(this));
-        rvMomentsFeed.setAdapter(momentAdapter);
+        vpMomentsFeed.setOrientation(ViewPager2.ORIENTATION_VERTICAL);
+        vpMomentsFeed.setAdapter(momentAdapter);
+
+        // Lắng nghe bình luận và thả cảm xúc React trên khoảnh khắc
+        momentAdapter.setListener(new MomentFeedAdapter.OnMomentActionListener() {
+            @Override
+            public void onSendComment(Moment moment, String comment) {
+                sendMomentMessage(moment, comment);
+            }
+
+            @Override
+            public void onSendReaction(Moment moment, String reactionEmoji) {
+                sendMomentMessage(moment, reactionEmoji);
+            }
+        });
 
         rvConversations = findViewById(R.id.rvConversations);
         etSearchPhone = findViewById(R.id.etSearchPhone);
@@ -206,8 +222,14 @@ public class MainActivity extends AppCompatActivity {
         // Nút Profile (Góc phải trên)
         btnTopProfile.setOnClickListener(v -> openProfile());
 
-        // Nút xem bạn bè
-        pillFriendsCount.setOnClickListener(v -> showFriendsDialog());
+        // Nút xem bạn bè / Lọc khoảnh khắc
+        pillFriendsCount.setOnClickListener(v -> {
+            if (layoutMomentsMode != null && layoutMomentsMode.getVisibility() == View.VISIBLE) {
+                showFilterDialog();
+            } else {
+                showFriendsDialog();
+            }
+        });
     }
 
     private void showCameraMode() {
@@ -219,6 +241,8 @@ public class MainActivity extends AppCompatActivity {
         }
         btnTabChat.clearColorFilter();
         btnTabHistory.clearColorFilter();
+        loadFriendsCount();
+        if (tvFriendsBadge != null) tvFriendsBadge.setVisibility(View.VISIBLE);
         startCamera();
     }
 
@@ -234,6 +258,11 @@ public class MainActivity extends AppCompatActivity {
             btnTabCameraWrapper.setBackground(null);
         }
         btnTabChat.clearColorFilter();
+        
+        // Hiển thị nhãn lọc "Mọi người ⌄"
+        tvFriendsCount.setText(selectedFilterName + " ⌄");
+        if (tvFriendsBadge != null) tvFriendsBadge.setVisibility(View.GONE);
+
         loadFeedMoments();
     }
 
@@ -292,8 +321,56 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    // Dropdown chọn người để lọc xem khoảnh khắc (Chuẩn hình ảnh Locket)
+    private void showFilterDialog() {
+        ApiClient.getService().getFriends().enqueue(new Callback<JsonObject>() {
+            @Override
+            public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    JsonArray friends = response.body().getAsJsonArray("data");
+                    int friendCount = friends != null ? friends.size() : 0;
+
+                    // Danh sách lựa chọn lọc: 1. Mọi người, 2. Bạn, 3..N: Từng người bạn
+                    String[] filterItems = new String[2 + friendCount];
+                    filterItems[0] = "👥 Mọi người";
+                    filterItems[1] = "👤 Bạn (Chỉ khoảnh khắc của tôi)";
+
+                    for (int i = 0; i < friendCount; i++) {
+                        JsonObject f = friends.get(i).getAsJsonObject();
+                        String name = f.has("full_name") ? f.get("full_name").getAsString() : "Bạn bè";
+                        filterItems[i + 2] = "👤 " + name;
+                    }
+
+                    new AlertDialog.Builder(MainActivity.this)
+                            .setTitle("Lọc khoảnh khắc theo người")
+                            .setItems(filterItems, (dialog, which) -> {
+                                if (which == 0) {
+                                    selectedFilterUserId = null;
+                                    selectedFilterName = "Mọi người";
+                                } else if (which == 1) {
+                                    int myId = getSharedPreferences("locket_prefs", MODE_PRIVATE).getInt("user_id", -1);
+                                    selectedFilterUserId = myId;
+                                    selectedFilterName = "Bạn";
+                                } else {
+                                    JsonObject f = friends.get(which - 2).getAsJsonObject();
+                                    selectedFilterUserId = f.has("id") ? f.get("id").getAsInt() : null;
+                                    selectedFilterName = f.has("full_name") ? f.get("full_name").getAsString() : "Bạn bè";
+                                }
+                                tvFriendsCount.setText(selectedFilterName + " ⌄");
+                                loadFeedMoments();
+                            })
+                            .setNegativeButton("Hủy", null)
+                            .show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<JsonObject> call, Throwable t) {}
+        });
+    }
+
     private void loadFeedMoments() {
-        ApiClient.getService().getFeedMoments().enqueue(new Callback<JsonObject>() {
+        ApiClient.getService().getFeedMoments(selectedFilterUserId).enqueue(new Callback<JsonObject>() {
             @Override
             public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
                 if (response.isSuccessful() && response.body() != null) {
@@ -307,6 +384,9 @@ public class MainActivity extends AppCompatActivity {
                             layoutEmptyMoments.setVisibility(View.VISIBLE);
                         } else {
                             layoutEmptyMoments.setVisibility(View.GONE);
+                            if (vpMomentsFeed != null) {
+                                vpMomentsFeed.setCurrentItem(0, false);
+                            }
                         }
                     }
                 }
@@ -315,6 +395,51 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onFailure(Call<JsonObject> call, Throwable t) {
                 layoutEmptyMoments.setVisibility(View.VISIBLE);
+            }
+        });
+    }
+
+    // Gửi bình luận hoặc cảm xúc React vào phòng chat của người đăng khoảnh khắc
+    private void sendMomentMessage(Moment moment, String messageText) {
+        int targetUserId = moment.getSenderId();
+        int myUserId = getSharedPreferences("locket_prefs", MODE_PRIVATE).getInt("user_id", -1);
+
+        if (targetUserId == myUserId || targetUserId <= 0) {
+            Toast.makeText(this, "Đây là khoảnh khắc của chính bạn!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        JsonObject directBody = new JsonObject();
+        directBody.addProperty("targetUserId", targetUserId);
+
+        ApiClient.getService().getOrCreateDirectChat(directBody).enqueue(new Callback<JsonObject>() {
+            @Override
+            public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    JsonObject resBody = response.body();
+                    if (resBody.get("success").getAsBoolean()) {
+                        int convId = resBody.getAsJsonObject("data").get("conversationId").getAsInt();
+
+                        RequestBody reqConvId = RequestBody.create(MediaType.parse("text/plain"), String.valueOf(convId));
+                        RequestBody reqContent = RequestBody.create(MediaType.parse("text/plain"), messageText);
+                        RequestBody reqType = RequestBody.create(MediaType.parse("text/plain"), "TEXT");
+
+                        ApiClient.getService().sendMessage(reqConvId, reqContent, reqType, null).enqueue(new Callback<JsonObject>() {
+                            @Override
+                            public void onResponse(Call<JsonObject> c, Response<JsonObject> r) {
+                                Toast.makeText(MainActivity.this, "Đã gửi tin nhắn đến " + moment.getSenderName() + ": " + messageText, Toast.LENGTH_SHORT).show();
+                            }
+
+                            @Override
+                            public void onFailure(Call<JsonObject> c, Throwable t) {}
+                        });
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(Call<JsonObject> call, Throwable t) {
+                Toast.makeText(MainActivity.this, "Lỗi kết nối", Toast.LENGTH_SHORT).show();
             }
         });
     }

@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background">
+
+    <!-- Container nội dung chính ở giữa -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <!-- Khung ảnh khoảnh khắc bo góc 32dp chuẩn Locket -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cardMomentFrame"
+            android:layout_width="match_parent"
+            android:layout_height="380dp"
+            android:layout_marginHorizontal="20dp"
+            android:backgroundTint="#161616"
+            app:cardCornerRadius="32dp"
+            app:cardElevation="0dp">
+
+            <ImageView
+                android:id="@+id/ivMomentPhoto"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:src="@drawable/ic_launcher_foreground" />
+
+            <!-- Dòng caption gắn trên ảnh nếu có -->
+            <TextView
+                android:id="@+id/tvMomentCaptionOverlay"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|center_horizontal"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/bg_pill_friends"
+                android:gravity="center"
+                android:paddingHorizontal="14dp"
+                android:paddingVertical="6dp"
+                android:text="Khoảnh khắc Locket"
+                android:textColor="#FFFFFF"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+        </androidx.cardview.widget.CardView>
+
+        <!-- Tên người gửi và thời gian đăng (e.g. Kem bơ rất  7ph) -->
+        <TextView
+            android:id="@+id/tvSenderAndDate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Người bạn  •  Vừa xong"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <!-- Thanh nhập bình luận & Thả cảm xúc React (Chuẩn Locket) -->
+        <LinearLayout
+            android:id="@+id/layoutCommentBar"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_comment_bar"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <!-- Ô nhập nội dung bình luận -->
+            <EditText
+                android:id="@+id/etMomentComment"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@android:color/transparent"
+                android:hint="Tin nhắn..."
+                android:imeOptions="actionSend"
+                android:inputType="textCapSentences"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#888888"
+                android:textSize="13sp" />
+
+            <!-- Nút gửi bình luận (hiện khi có chữ) -->
+            <ImageButton
+                android:id="@+id/btnSendComment"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="6dp"
+                android:src="@drawable/ic_send"
+                android:visibility="gone" />
+
+            <!-- Cụm biểu tượng cảm xúc Quick React Icons -->
+            <LinearLayout
+                android:id="@+id/layoutReactions"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/btnReactHeart"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:text="❤️"
+                    android:textSize="18sp" />
+
+                <TextView
+                    android:id="@+id/btnReactFire"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:text="🔥"
+                    android:textSize="18sp" />
+
+                <TextView
+                    android:id="@+id/btnReactLaugh"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:text="😂"
+                    android:textSize="18sp" />
+
+                <TextView
+                    android:id="@+id/btnReactYellowHeart"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:text="💛"
+                    android:textSize="18sp" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+</RelativeLayout>

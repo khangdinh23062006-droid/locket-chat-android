@@ -78,4 +78,7 @@ public interface ApiService {
 
     @GET("locket/feed")
     Call<JsonObject> getFeedMoments();
+
+    @GET("locket/feed")
+    Call<JsonObject> getFeedMoments(@Query("userId") Integer userId);
 }
