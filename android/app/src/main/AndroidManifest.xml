@@ -50,6 +50,12 @@
             android:configChanges="orientation|screenSize"
             android:windowSoftInputMode="adjustResize" />
 
+        <!-- User Profile and Language Switcher -->
+        <activity
+            android:name=".ui.profile.ProfileActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize" />
+
         <!-- Locket Home Screen Widget Receiver (Rubric 5 Points Creative Feature) -->
         <receiver
             android:name=".widget.LocketWidgetProvider"

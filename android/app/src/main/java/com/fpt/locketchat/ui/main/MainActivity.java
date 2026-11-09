@@ -1,7 +1,6 @@
 package com.fpt.locketchat.ui.main;
 
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
@@ -12,7 +11,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.fpt.locketchat.R;
 import com.fpt.locketchat.data.api.ApiClient;
 import com.fpt.locketchat.data.model.Conversation;
-import com.fpt.locketchat.ui.auth.LoginActivity;
+import com.fpt.locketchat.ui.profile.ProfileActivity;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -28,7 +27,7 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView rvConversations;
     private ConversationAdapter adapter;
     private EditText etSearchPhone;
-    private Button btnSearch, btnLogout;
+    private Button btnSearch, btnProfile;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,7 +44,7 @@ public class MainActivity extends AppCompatActivity {
         rvConversations = findViewById(R.id.rvConversations);
         etSearchPhone = findViewById(R.id.etSearchPhone);
         btnSearch = findViewById(R.id.btnSearch);
-        btnLogout = findViewById(R.id.btnLogout);
+        btnProfile = findViewById(R.id.btnProfile);
     }
 
     private void setupRecyclerView() {
@@ -55,14 +54,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupListeners() {
-        // Đăng xuất
-        btnLogout.setOnClickListener(v -> {
-            SharedPreferences.Editor editor = getSharedPreferences("locket_prefs", MODE_PRIVATE).edit();
-            editor.clear();
-            editor.apply();
-            ApiClient.setAuthToken(null);
-            startActivity(new Intent(MainActivity.this, LoginActivity.class));
-            finish();
+        // Mở màn hình Hồ sơ & Đa ngôn ngữ (ProfileActivity)
+        btnProfile.setOnClickListener(v -> {
+            startActivity(new Intent(MainActivity.this, ProfileActivity.class));
         });
 
         // Tìm kiếm và thêm bạn bè bằng số điện thoại (Rubric 20 Điểm)
@@ -82,7 +76,7 @@ public class MainActivity extends AppCompatActivity {
                         if (data.size() == 0) {
                             Toast.makeText(MainActivity.this, "Không tìm thấy người dùng với SĐT này", Toast.LENGTH_SHORT).show();
                         } else {
-                            Toast.makeText(MainActivity.this, "Tìm thấy " + data.size() + " kết quả", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(MainActivity.this, "Tìm thấy " + data.size() + " người dùng", Toast.LENGTH_SHORT).show();
                         }
                     }
                 }
