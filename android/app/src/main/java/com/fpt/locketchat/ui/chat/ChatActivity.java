@@ -110,7 +110,7 @@ public class ChatActivity extends AppCompatActivity {
 
     private void initSocket() {
         try {
-            socket = IO.socket("http://10.0.2.2:5000");
+            socket = IO.socket(ApiClient.getBaseHost());
             socket.connect();
 
             socket.emit("join_conversation", conversationId);

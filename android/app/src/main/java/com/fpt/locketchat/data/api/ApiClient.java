@@ -12,6 +12,10 @@ public class ApiClient {
     // Nếu chạy trên điện thoại thật cắm cáp/WiFi, thay bằng địa chỉ IP LAN của máy tính (vd: 192.168.1.x)
     public static final String BASE_URL = "http://10.0.2.2:5000/api/";
 
+    public static String getBaseHost() {
+        return BASE_URL.endsWith("/api/") ? BASE_URL.substring(0, BASE_URL.length() - 5) : BASE_URL;
+    }
+
     private static Retrofit retrofit = null;
     private static String authToken = null;
 
