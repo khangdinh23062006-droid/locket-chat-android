@@ -16,6 +16,13 @@ public class ApiClient {
         return BASE_URL.endsWith("/api/") ? BASE_URL.substring(0, BASE_URL.length() - 5) : BASE_URL;
     }
 
+    public static String getAuthToken() { return authToken; }
+
+    public static String resolveUrl(String path) {
+        if (path == null || path.isEmpty()) return null;
+        return path.startsWith("http://") || path.startsWith("https://") ? path : getBaseHost() + path;
+    }
+
     private static Retrofit retrofit = null;
     private static String authToken = null;
 
@@ -27,7 +34,7 @@ public class ApiClient {
     public static ApiService getService() {
         if (retrofit == null) {
             HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
-            logging.setLevel(HttpLoggingInterceptor.Level.BODY);
+            logging.setLevel(HttpLoggingInterceptor.Level.BASIC);
 
             OkHttpClient.Builder httpClient = new OkHttpClient.Builder()
                     .connectTimeout(15, TimeUnit.SECONDS)

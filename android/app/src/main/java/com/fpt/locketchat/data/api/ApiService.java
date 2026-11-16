@@ -56,12 +56,16 @@ public interface ApiService {
     @GET("chat/conversations/{id}/messages")
     Call<JsonObject> getMessages(@Path("id") int conversationId);
 
+    @POST("chat/conversations/{id}/read")
+    Call<JsonObject> markConversationRead(@Path("id") int conversationId, @Body JsonObject body);
+
     @Multipart
     @POST("chat/messages")
     Call<JsonObject> sendMessage(
             @Part("conversationId") RequestBody conversationId,
             @Part("content") RequestBody content,
             @Part("messageType") RequestBody messageType,
+            @Part("clientMessageId") RequestBody clientMessageId,
             @Part MultipartBody.Part file
     );
 

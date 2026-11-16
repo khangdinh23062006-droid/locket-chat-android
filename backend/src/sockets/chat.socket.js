@@ -1,44 +1,13 @@
+const jwt = require('jsonwebtoken');
 module.exports = (io) => {
-    io.on('connection', (socket) => {
-        console.log(`[Socket] User connected: ${socket.id}`);
-
-        // Tham gia phòng trò chuyện theo conversationId
-        socket.on('join_conversation', (conversationId) => {
-            socket.join(`conv_${conversationId}`);
-            console.log(`[Socket] Socket ${socket.id} joined conv_${conversationId}`);
-        });
-
-        // Rời phòng
-        socket.on('leave_conversation', (conversationId) => {
-            socket.leave(`conv_${conversationId}`);
-            console.log(`[Socket] Socket ${socket.id} left conv_${conversationId}`);
-        });
-
-        // Gửi tin nhắn mới trong phòng chat
-        socket.on('send_message', (messageData) => {
-            if (messageData && messageData.conversation_id) {
-                // Broadcast cho tất cả thành viên trong room
-                io.to(`conv_${messageData.conversation_id}`).emit('new_message', messageData);
-            }
-        });
-
-        // Đang nhập văn bản (Typing status)
-        socket.on('typing', ({ conversationId, userId, userName, isTyping }) => {
-            socket.to(`conv_${conversationId}`).emit('user_typing', {
-                conversationId,
-                userId,
-                userName,
-                isTyping
-            });
-        });
-
-        // Bắn sự kiện khoảnh khắc Locket mới (để Widget / App nhận được thông báo)
-        socket.on('new_moment', (momentData) => {
-            io.emit('moment_broadcast', momentData);
-        });
-
-        socket.on('disconnect', () => {
-            console.log(`[Socket] User disconnected: ${socket.id}`);
-        });
+    io.use((socket, next) => {
+        try {
+            const user = jwt.verify(socket.handshake.auth.token, process.env.JWT_SECRET || 'locket_chat_super_secret_jwt_key_2026');
+            if (!Number.isInteger(user.id)) return next(new Error('Invalid account'));
+            socket.userId = user.id;
+            next();
+        } catch (error) { next(new Error('Authentication required')); }
     });
+    io.on('connection', socket => socket.join(`user_${socket.userId}`));
+    // Only the REST controller broadcasts messages after persistence.
 };

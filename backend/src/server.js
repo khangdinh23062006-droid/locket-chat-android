@@ -17,6 +17,7 @@ const io = new Server(server, {
         methods: ['GET', 'POST']
     }
 });
+app.set('io', io);
 require('./sockets/chat.socket')(io);
 
 // Middlewares

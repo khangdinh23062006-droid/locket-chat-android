@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center">
+        <Button android:id="@+id/btnNewDirect" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Nhắn tin"/>
+        <Button android:id="@+id/btnNewGroup" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Tạo nhóm"/>
+        <Button android:id="@+id/btnRefreshChats" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Tải lại"/>
+    </LinearLayout>
+    <TextView android:id="@+id/tvRecentStatus" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:padding="8dp" android:textColor="@color/text_secondary"/>
+    <androidx.recyclerview.widget.RecyclerView android:id="@+id/rvConversations"
+        android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:padding="8dp"/>
+</LinearLayout>

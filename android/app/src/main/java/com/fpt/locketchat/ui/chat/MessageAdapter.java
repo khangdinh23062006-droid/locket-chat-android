@@ -3,6 +3,9 @@ package com.fpt.locketchat.ui.chat;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.media.MediaPlayer;
+import android.widget.LinearLayout;
+import com.fpt.locketchat.utils.MessageFormat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,6 +14,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.DiffUtil;
 import com.bumptech.glide.Glide;
 import com.fpt.locketchat.R;
 import com.fpt.locketchat.data.api.ApiClient;
@@ -27,21 +31,57 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     private final Context context;
     private final int currentUserId;
     private List<Message> messages = new ArrayList<>();
+    private MediaPlayer player;
+    private TextView playingLabel;
+    private int playingId = -1;
+    private android.app.AlertDialog videoDialog;
+    private android.widget.VideoView activeVideo;
+
+    public void releasePlayer() {
+        if (player != null) { player.release(); player = null; }
+        if (playingLabel != null) playingLabel.setText("▶ Phát tin nhắn thoại");
+        playingLabel = null;
+        playingId = -1;
+        if (activeVideo != null) { activeVideo.stopPlayback(); activeVideo = null; }
+        if (videoDialog != null) { videoDialog.dismiss(); videoDialog = null; }
+    }
+
+    private void metadata(View view) {
+        TextView time = new TextView(context);
+        time.setTag("message_metadata");
+        time.setTextSize(10);
+        time.setTextColor(android.graphics.Color.GRAY);
+        ((LinearLayout) view).addView(time);
+    }
 
     public MessageAdapter(Context context, int currentUserId) {
         this.context = context;
         this.currentUserId = currentUserId;
+        setHasStableIds(true);
     }
 
     public void setMessages(List<Message> newMessages) {
-        this.messages = newMessages != null ? newMessages : new ArrayList<>();
-        notifyDataSetChanged();
+        List<Message> before = messages;
+        List<Message> after = newMessages == null ? new ArrayList<>() : new ArrayList<>(newMessages);
+        DiffUtil.DiffResult changes = DiffUtil.calculateDiff(new DiffUtil.Callback() {
+            public int getOldListSize() { return before.size(); }
+            public int getNewListSize() { return after.size(); }
+            public boolean areItemsTheSame(int oldIndex, int newIndex) {
+                return before.get(oldIndex).getId() == after.get(newIndex).getId();
+            }
+            public boolean areContentsTheSame(int oldIndex, int newIndex) {
+                Message old = before.get(oldIndex), next = after.get(newIndex);
+                return java.util.Objects.equals(old.getContent(), next.getContent())
+                        && java.util.Objects.equals(old.getFileUrl(), next.getFileUrl())
+                        && java.util.Objects.equals(old.getMessageType(), next.getMessageType())
+                        && java.util.Objects.equals(old.getSenderName(), next.getSenderName())
+                        && java.util.Objects.equals(old.getCreatedAt(), next.getCreatedAt());
+            }
+        });
+        messages = after;
+        changes.dispatchUpdatesTo(this);
     }
-
-    public void addMessage(Message message) {
-        this.messages.add(message);
-        notifyItemInserted(this.messages.size() - 1);
-    }
+    @Override public long getItemId(int position) { return messages.get(position).getId(); }
 
     @Override
     public int getItemViewType(int position) {
@@ -54,9 +94,11 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         if (viewType == TYPE_SENT) {
             View view = LayoutInflater.from(context).inflate(R.layout.item_message_sent, parent, false);
+            metadata(view);
             return new SentViewHolder(view);
         } else {
             View view = LayoutInflater.from(context).inflate(R.layout.item_message_received, parent, false);
+            metadata(view);
             return new ReceivedViewHolder(view);
         }
     }
@@ -64,6 +106,9 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         Message msg = messages.get(position);
+        TextView metadata = holder.itemView.findViewWithTag("message_metadata");
+        metadata.setText((msg.getSenderId() != currentUserId && msg.getSenderName() != null ? msg.getSenderName() + " • " : "")
+                + MessageFormat.time(msg.getCreatedAt()));
         String serverHost = ApiClient.BASE_URL.replace("/api/", "");
 
         if (holder instanceof SentViewHolder) {
@@ -154,7 +199,7 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             layoutMomentReply.setVisibility(View.GONE);
             cardImage.setVisibility(View.VISIBLE);
 
-            String fullUrl = serverHost + msg.getFileUrl();
+            String fullUrl = ApiClient.resolveUrl(msg.getFileUrl());
             Glide.with(context)
                     .load(fullUrl)
                     .placeholder(R.drawable.ic_launcher_foreground)
@@ -167,15 +212,65 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             layoutMomentReply.setVisibility(View.GONE);
             layoutFile.setVisibility(View.VISIBLE);
 
-            tvFileName.setText(msg.getFileName() != null ? msg.getFileName() : "File đính kèm");
+            boolean audio = "AUDIO".equalsIgnoreCase(type);
+            boolean video = "VIDEO".equalsIgnoreCase(type);
+            tvFileName.setText(audio ? (playingId == msg.getId() ? "■ Dừng tin nhắn thoại" : "▶ Phát tin nhắn thoại")
+                    : (video ? "▶ Video • " : "📎 ") + (msg.getFileName() != null ? msg.getFileName() : "File đính kèm"));
+            if (audio && playingId == msg.getId()) playingLabel = tvFileName;
             long size = msg.getFileSize() != null ? msg.getFileSize() : 0;
             tvFileSize.setText(FileUtils.formatFileSize(size));
 
             // Bấm vào file để mở link tải
             layoutFile.setOnClickListener(v -> {
-                String fullUrl = serverHost + msg.getFileUrl();
-                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(fullUrl));
-                context.startActivity(browserIntent);
+                String fullUrl = ApiClient.resolveUrl(msg.getFileUrl());
+                if (audio) {
+                    boolean stopping = playingId == msg.getId();
+                    releasePlayer();
+                    if (stopping) return;
+                    MediaPlayer next = new MediaPlayer();
+                    player = next; playingId = msg.getId(); playingLabel = tvFileName;
+                    tvFileName.setText("Đang tải âm thanh…");
+                    try {
+                        next.setDataSource(fullUrl);
+                        next.setOnPreparedListener(mp -> {
+                            if (player == mp) { mp.start(); tvFileName.setText("■ Dừng tin nhắn thoại"); }
+                        });
+                        next.setOnCompletionListener(mp -> releasePlayer());
+                        next.setOnErrorListener((mp, what, extra) -> { releasePlayer();
+                            android.widget.Toast.makeText(context, "Không phát được âm thanh; kiểm tra mạng", android.widget.Toast.LENGTH_SHORT).show(); return true; });
+                        next.prepareAsync();
+                    } catch (Exception e) { releasePlayer(); }
+                    return;
+                }
+                Intent browserIntent = new Intent(Intent.ACTION_VIEW);
+                if (video) {
+                    releasePlayer();
+                    android.widget.VideoView videoView = new android.widget.VideoView(context);
+                    android.widget.FrameLayout container = new android.widget.FrameLayout(context);
+                    container.addView(videoView, new android.widget.FrameLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT, (int) (300 * context.getResources().getDisplayMetrics().density), android.view.Gravity.CENTER));
+                    android.widget.MediaController controls = new android.widget.MediaController(context);
+                    controls.setAnchorView(videoView);
+                    videoView.setMediaController(controls);
+                    android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(context).setTitle("Video")
+                            .setView(container).setNegativeButton("Đóng", null).create();
+                    activeVideo = videoView;
+                    videoDialog = dialog;
+                    dialog.setOnDismissListener(d -> { videoView.stopPlayback(); activeVideo = null; videoDialog = null; });
+                    videoView.setOnErrorListener((mp, what, extra) -> {
+                        android.widget.Toast.makeText(context, "Không phát được video; kiểm tra mạng hoặc định dạng", android.widget.Toast.LENGTH_SHORT).show();
+                        return true;
+                    });
+                    dialog.show();
+                    videoView.setVideoURI(Uri.parse(fullUrl));
+                    videoView.setOnPreparedListener(mp -> videoView.start());
+                    return;
+                }
+                browserIntent.setData(Uri.parse(fullUrl));
+                try { context.startActivity(browserIntent); }
+                catch (android.content.ActivityNotFoundException e) {
+                    android.widget.Toast.makeText(context, "Chưa có ứng dụng mở loại tệp này", android.widget.Toast.LENGTH_SHORT).show();
+                }
             });
         }
     }
@@ -183,6 +278,14 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     @Override
     public int getItemCount() {
         return messages.size();
+    }
+
+    @Override public void onViewRecycled(@NonNull RecyclerView.ViewHolder holder) {
+        if ((holder instanceof SentViewHolder && ((SentViewHolder) holder).tvFileName == playingLabel)
+                || (holder instanceof ReceivedViewHolder && ((ReceivedViewHolder) holder).tvFileName == playingLabel)) {
+            releasePlayer();
+        }
+        super.onViewRecycled(holder);
     }
 
     static class SentViewHolder extends RecyclerView.ViewHolder {

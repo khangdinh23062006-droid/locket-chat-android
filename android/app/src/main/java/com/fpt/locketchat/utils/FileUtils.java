@@ -36,13 +36,20 @@ public class FileUtils {
     public static File getFileFromUri(Context context, Uri uri) {
         try {
             String fileName = getFileName(context, uri);
-            File tempFile = new File(context.getCacheDir(), fileName);
+            File directory = new File(context.getCacheDir(), "chat_" + java.util.UUID.randomUUID());
+            if (!directory.mkdirs()) return null;
+            File tempFile = new File(directory, new File(fileName).getName());
             try (InputStream in = context.getContentResolver().openInputStream(uri);
                  FileOutputStream out = new FileOutputStream(tempFile)) {
                 if (in == null) return null;
                 byte[] buffer = new byte[4096];
                 int bytesRead;
+                long total = 0;
                 while ((bytesRead = in.read(buffer)) != -1) {
+                    total += bytesRead;
+                    if (total > 50L * 1024 * 1024) {
+                        out.close(); tempFile.delete(); directory.delete(); return null;
+                    }
                     out.write(buffer, 0, bytesRead);
                 }
                 out.flush();
@@ -57,7 +64,7 @@ public class FileUtils {
     public static String formatFileSize(long size) {
         if (size <= 0) return "0 B";
         final String[] units = new String[]{"B", "KB", "MB", "GB"};
-        int digitGroups = (int) (Math.log10(size) / Math.log10(1024));
-        return new DecimalFormat("#,##0.#").format(size / Math.pow(1024, digitGroups)) + " " + units[digitGroups];
+        int digitGroups = Math.min(units.length - 1, (int) (Math.log10(size) / Math.log10(1024)));
+        return new DecimalFormat("#,##0.#", java.text.DecimalFormatSymbols.getInstance(java.util.Locale.ROOT)).format(size / Math.pow(1024, digitGroups)) + " " + units[digitGroups];
     }
 }

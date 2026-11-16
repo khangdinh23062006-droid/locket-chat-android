@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS conversation_members (
     conversation_id INT NOT NULL,
     user_id INT NOT NULL,
     role ENUM('MEMBER', 'ADMIN') DEFAULT 'MEMBER',
+    last_read_message_id INT NOT NULL DEFAULT 0,
     joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (conversation_id, user_id),
     CONSTRAINT fk_cm_conversation FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
@@ -57,6 +58,7 @@ CREATE TABLE IF NOT EXISTS messages (
     id INT AUTO_INCREMENT PRIMARY KEY,
     conversation_id INT NOT NULL,
     sender_id INT NOT NULL,
+    client_message_id VARCHAR(36) NULL,
     message_type ENUM('TEXT', 'IMAGE', 'VIDEO', 'AUDIO', 'FILE', 'MOMENT') NOT NULL DEFAULT 'TEXT',
     content TEXT NULL,
     file_url VARCHAR(255) NULL,
@@ -64,6 +66,7 @@ CREATE TABLE IF NOT EXISTS messages (
     file_size INT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_conv_time (conversation_id, created_at),
+    UNIQUE KEY uq_message_client (sender_id, client_message_id),
     CONSTRAINT fk_msg_conversation FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
     CONSTRAINT fk_msg_sender FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;

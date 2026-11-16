@@ -90,10 +90,6 @@ public class MainActivity extends AppCompatActivity {
     private String selectedFilterName = "Mọi người";
 
     // Chat Views
-    private RecyclerView rvConversations;
-    private ConversationAdapter adapter;
-    private EditText etSearchPhone;
-    private Button btnSearch;
 
     // Bottom Dock Views
     private ImageButton btnTabHistory, btnTabCamera, btnTabChat;
@@ -150,14 +146,15 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         initViews();
-        setupRecyclerView();
-        loadConversations();
+        if (savedInstanceState == null) {
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.recentChatsContainer, new RecentChatsFragment(), "recent_chats").commit();
+        }
         loadFriendsCount();
         loadLatestHistoryThumbnail();
         loadLatestHistoryThumbnail();
         setupNavigationTabs();
         setupCamera();
-        setupChatActions();
     }
 
     private void initViews() {
@@ -222,15 +219,13 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        rvConversations = findViewById(R.id.rvConversations);
-        etSearchPhone = findViewById(R.id.etSearchPhone);
-        btnSearch = findViewById(R.id.btnSearch);
 
         btnTabHistory = findViewById(R.id.btnTabHistory);
         btnTabCamera = findViewById(R.id.btnTabCamera);
         btnTabCameraWrapper = findViewById(R.id.btnTabCameraWrapper);
         btnTabChat = findViewById(R.id.btnTabChat);
         tvChatBadge = findViewById(R.id.tvChatBadge);
+        tvChatBadge.setVisibility(View.GONE);
     }
 
     private void setupNavigationTabs() {
@@ -697,56 +692,9 @@ public class MainActivity extends AppCompatActivity {
     // ==========================================
     // CHAT & CONVERSATIONS
     // ==========================================
-    private void setupRecyclerView() {
-        adapter = new ConversationAdapter(this);
-        rvConversations.setLayoutManager(new LinearLayoutManager(this));
-        rvConversations.setAdapter(adapter);
-    }
-
-    private void setupChatActions() {
-        btnSearch.setOnClickListener(v -> {
-            String query = etSearchPhone.getText().toString().trim();
-            if (query.isEmpty()) {
-                loadConversations();
-                return;
-            }
-
-            ApiClient.getService().searchByPhone(query).enqueue(new Callback<JsonObject>() {
-                @Override
-                public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
-                    if (response.isSuccessful() && response.body() != null) {
-                        JsonObject res = response.body();
-                        JsonArray data = res.getAsJsonArray("data");
-                        Toast.makeText(MainActivity.this, "Tìm thấy " + data.size() + " người dùng", Toast.LENGTH_SHORT).show();
-                    }
-                }
-
-                @Override
-                public void onFailure(Call<JsonObject> call, Throwable t) {
-                    Toast.makeText(MainActivity.this, "Lỗi tìm kiếm: " + t.getMessage(), Toast.LENGTH_SHORT).show();
-                }
-            });
-        });
-    }
-
     private void loadConversations() {
-        ApiClient.getService().getConversations().enqueue(new Callback<JsonObject>() {
-            @Override
-            public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    JsonObject body = response.body();
-                    if (body.get("success").getAsBoolean()) {
-                        JsonArray data = body.getAsJsonArray("data");
-                        Type listType = new TypeToken<List<Conversation>>() {}.getType();
-                        List<Conversation> conversations = new Gson().fromJson(data, listType);
-                        adapter.setData(conversations);
-                    }
-                }
-            }
-
-            @Override
-            public void onFailure(Call<JsonObject> call, Throwable t) {}
-        });
+        androidx.fragment.app.Fragment fragment = getSupportFragmentManager().findFragmentByTag("recent_chats");
+        if (fragment instanceof RecentChatsFragment) ((RecentChatsFragment) fragment).refresh();
     }
 
     private void loadFriendsCount() {

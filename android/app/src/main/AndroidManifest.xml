@@ -47,7 +47,6 @@
         <activity
             android:name=".ui.chat.ChatActivity"
             android:exported="false"
-            android:configChanges="orientation|screenSize"
             android:windowSoftInputMode="adjustResize" />
 
         <!-- User Profile and Language Switcher -->

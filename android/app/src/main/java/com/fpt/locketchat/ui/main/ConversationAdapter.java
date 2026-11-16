@@ -13,6 +13,9 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.fpt.locketchat.R;
+import com.bumptech.glide.Glide;
+import com.fpt.locketchat.data.api.ApiClient;
+import com.fpt.locketchat.utils.MessageFormat;
 import com.fpt.locketchat.data.model.Conversation;
 import com.fpt.locketchat.ui.chat.ChatActivity;
 import java.util.ArrayList;
@@ -43,7 +46,13 @@ public class ConversationAdapter extends RecyclerView.Adapter<ConversationAdapte
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Conversation conv = list.get(position);
         holder.tvName.setText(conv.getDisplayName());
-        holder.tvLastMessage.setText(conv.getLastMessage());
+        holder.tvLastMessage.setText(MessageFormat.preview(conv.getLastMessageType(), conv.getLastMessage()));
+        holder.tvTime.setText(MessageFormat.time(conv.getLastMessageTime()));
+        Glide.with(context).load(ApiClient.resolveUrl(conv.getDisplayAvatar()))
+                .placeholder(R.drawable.ic_launcher_foreground).error(R.drawable.ic_launcher_foreground)
+                .circleCrop().into(holder.ivAvatar);
+        holder.tvUnread.setVisibility(conv.getUnreadCount() > 0 ? View.VISIBLE : View.GONE);
+        holder.tvUnread.setText(conv.getUnreadCount() > 99 ? "99+" : String.valueOf(conv.getUnreadCount()));
 
         // Bấm vào item -> Mở phòng Chat trực tiếp
         holder.itemView.setOnClickListener(v -> {
@@ -73,12 +82,14 @@ public class ConversationAdapter extends RecyclerView.Adapter<ConversationAdapte
 
     static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView ivAvatar;
-        TextView tvName, tvLastMessage;
+        TextView tvName, tvLastMessage, tvTime, tvUnread;
         Button btnQuickCall;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             ivAvatar = itemView.findViewById(R.id.ivAvatar);
+            tvTime = itemView.findViewById(R.id.tvConversationTime);
+            tvUnread = itemView.findViewById(R.id.tvUnread);
             tvName = itemView.findViewById(R.id.tvName);
             tvLastMessage = itemView.findViewById(R.id.tvLastMessage);
             btnQuickCall = itemView.findViewById(R.id.btnQuickCall);

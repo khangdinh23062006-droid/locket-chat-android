@@ -25,6 +25,14 @@ public class Conversation implements Serializable {
     @SerializedName("last_message_time")
     private String lastMessageTime;
 
+    @SerializedName("last_message_type")
+    private String lastMessageType;
+    @SerializedName("unread_count")
+    private int unreadCount;
+
+    public String getLastMessageType() { return lastMessageType; }
+    public int getUnreadCount() { return unreadCount; }
+
     public int getId() { return id; }
     public String getType() { return type; }
     public String getDisplayName() { return displayName != null ? displayName : "Phòng chat"; }
